@@ -125,8 +125,40 @@ const Header = () => {
             font-size: clamp(0.46rem, 0.68vw, 0.53rem);
           }
         }
+        /* Force header to always be dark mode - override any light mode styles */
+        .header-container {
+          background-color: #000 !important;
+        }
+        
+        .header-main-heading {
+          color: #fff !important;
+          background: radial-gradient(circle at top, #ee2e2e 0%, #fca63d 67%, #8b300f 100%) !important;
+        }
+        
+        .header-sub-heading {
+          color: rgb(227, 223, 223) !important;
+        }
+        
+        /* Ensure header text colors are not affected by light mode */
+        .light .header-container,
+        .light .header-container .header-main-heading,
+        .light .header-container .header-sub-heading {
+          background-color: #000 !important;
+          color: #fff !important;
+        }
+        
+        .light .header-container .header-sub-heading {
+          color: rgb(227, 223, 223) !important;
+        }
+        
+        .light .header-container .header-main-heading span {
+          color: rgb(164, 222, 78) !important;
+        }
       `}</style>
-      <header className="bg-black w-full flex items-center justify-center rounded-b-[10px] overflow-hidden header-container">
+      <header
+        className="bg-black w-full flex items-center justify-center rounded-b-[10px] overflow-hidden header-container"
+        style={{ backgroundColor: '#000' }}
+      >
         <div className="flex justify-center items-center w-full max-w-[1200px] flex-wrap header-content">
           <div className="flex-none flex items-center justify-center">
             <img
@@ -139,10 +171,22 @@ const Header = () => {
             className="flex flex-col items-center justify-center text-center header-heading-div"
             style={{ gap: '0.38rem' }}
           >
-            <div className="rounded-full flex justify-center items-center text-white font-bold whitespace-nowrap p-0 text-center leading-none header-main-heading">
-              codestorywith<span className="text-[rgb(164,222,78)]">MIK</span>
+            <div
+              className="rounded-full flex justify-center items-center text-white font-bold whitespace-nowrap p-0 text-center leading-none header-main-heading"
+              style={{ color: '#fff' }}
+            >
+              codestorywith
+              <span
+                className="text-[rgb(164,222,78)]"
+                style={{ color: 'rgb(164,222,78)' }}
+              >
+                MIK
+              </span>
             </div>
-            <p className="text-[rgb(227,223,223)] italic m-0 p-0 leading-tight header-sub-heading">
+            <p
+              className="text-[rgb(227,223,223)] italic m-0 p-0 leading-tight header-sub-heading"
+              style={{ color: 'rgb(227,223,223)' }}
+            >
               &apos;Aao, story se code likhe&apos;
             </p>
           </div>

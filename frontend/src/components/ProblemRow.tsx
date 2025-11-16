@@ -2,6 +2,7 @@ import React from 'react';
 import { CheckCircle2, Circle, Star, Video } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { useState } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface Problem {
   id: number;
@@ -19,6 +20,7 @@ type ProblemRowProps = {
 export function ProblemRow({ problem, ...props }: ProblemRowProps) {
   const [isCompleted, setIsCompleted] = useState(problem.completed);
   const [isStarred, setIsStarred] = useState(problem.starred);
+  const { theme } = useTheme();
 
   const difficultyConfig = {
     Easy: {
@@ -33,7 +35,12 @@ export function ProblemRow({ problem, ...props }: ProblemRowProps) {
   };
 
   return (
-    <div className="group hover:bg-slate-800/50 transition-colors" {...props}>
+    <div
+      className={`group transition-colors ${
+        theme === 'dark' ? 'hover:bg-slate-800/50' : 'hover:bg-slate-100/50'
+      }`}
+      {...props}
+    >
       {/* Desktop Layout */}
       <div className="hidden md:grid md:grid-cols-12 gap-4 px-6 py-4 items-center">
         {/* Status */}
@@ -45,7 +52,13 @@ export function ProblemRow({ problem, ...props }: ProblemRowProps) {
             {isCompleted ? (
               <CheckCircle2 className="w-6 h-6 text-emerald-400" />
             ) : (
-              <Circle className="w-6 h-6 text-slate-600 hover:text-slate-500" />
+              <Circle
+                className={`w-6 h-6 ${
+                  theme === 'dark'
+                    ? 'text-slate-600 hover:text-slate-500'
+                    : 'text-slate-400 hover:text-slate-500'
+                }`}
+              />
             )}
           </button>
         </div>
@@ -60,7 +73,9 @@ export function ProblemRow({ problem, ...props }: ProblemRowProps) {
               className={`w-5 h-5 ${
                 isStarred
                   ? 'fill-amber-400 text-amber-400'
-                  : 'text-slate-600 hover:text-slate-500'
+                  : theme === 'dark'
+                  ? 'text-slate-600 hover:text-slate-500'
+                  : 'text-slate-400 hover:text-slate-500'
               }`}
             />
           </button>
@@ -108,7 +123,11 @@ export function ProblemRow({ problem, ...props }: ProblemRowProps) {
               {isCompleted ? (
                 <CheckCircle2 className="w-6 h-6 text-emerald-400" />
               ) : (
-                <Circle className="w-6 h-6 text-slate-600" />
+                <Circle
+                  className={`w-6 h-6 ${
+                    theme === 'dark' ? 'text-slate-600' : 'text-slate-400'
+                  }`}
+                />
               )}
             </button>
             <button
@@ -117,7 +136,11 @@ export function ProblemRow({ problem, ...props }: ProblemRowProps) {
             >
               <Star
                 className={`w-5 h-5 ${
-                  isStarred ? 'fill-amber-400 text-amber-400' : 'text-slate-600'
+                  isStarred
+                    ? 'fill-amber-400 text-amber-400'
+                    : theme === 'dark'
+                    ? 'text-slate-600'
+                    : 'text-slate-400'
                 }`}
               />
             </button>
