@@ -1,7 +1,9 @@
+import React from 'react';
 import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Youtube, Github, ExternalLink } from 'lucide-react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
+import Header from './Header';
 
 interface DailyProblem {
   year: number;
@@ -203,13 +205,8 @@ export function HomePage() {
 
   return (
     <div className="h-full overflow-auto">
+      <Header />
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-        {/* Logo Section */}
-        <div className="text-center py-6">
-          <h1 className="bg-gradient-to-r from-purple-400 via-violet-400 to-purple-500 bg-clip-text text-transparent">
-            codestorywithmik
-          </h1>
-        </div>
 
         {/* Motivational Quote */}
         <Card className="bg-gradient-to-br from-slate-900/50 to-purple-900/30 border-purple-500/30 p-6 rounded-2xl">

@@ -1,4 +1,5 @@
-import { Home, BookOpen, List, GraduationCap, Trophy, X } from 'lucide-react';
+import React from 'react';
+import { Home, BookOpen, List, X } from 'lucide-react';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Progress } from './ui/progress';
 
@@ -10,15 +11,19 @@ interface SidebarProps {
   onViewChange: (view: string) => void;
 }
 
-export function Sidebar({ completedProblems, totalProblems, onClose, activeView, onViewChange }: SidebarProps) {
+export function Sidebar({
+  completedProblems,
+  totalProblems,
+  onClose,
+  activeView,
+  onViewChange,
+}: SidebarProps) {
   const progressPercentage = (completedProblems / totalProblems) * 100;
 
   const navItems = [
     { icon: Home, label: 'Home', value: 'home' },
     { icon: List, label: 'Practice Problems', value: 'practice' },
     { icon: BookOpen, label: 'Courses / Roadmaps', value: 'courses' },
-    { icon: GraduationCap, label: 'Quizzes / Assessments', value: 'quizzes' },
-    { icon: Trophy, label: 'Leaderboard', value: 'leaderboard' },
   ];
 
   return (
@@ -39,7 +44,7 @@ export function Sidebar({ completedProblems, totalProblems, onClose, activeView,
 
       {/* Navigation Links */}
       <nav className="flex-1 p-4 space-y-2">
-        {navItems.map((item) => {
+        {navItems.map(item => {
           const Icon = item.icon;
           const isActive = activeView === item.value;
           return (
@@ -75,7 +80,7 @@ export function Sidebar({ completedProblems, totalProblems, onClose, activeView,
             <p className="text-slate-500">@dsa_learner</p>
           </div>
         </div>
-        
+
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-slate-400">Progress</span>

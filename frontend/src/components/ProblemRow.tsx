@@ -1,3 +1,4 @@
+import React from 'react';
 import { CheckCircle2, Circle, Star, Video } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { useState } from 'react';
@@ -11,11 +12,11 @@ interface Problem {
   hasVideo: boolean;
 }
 
-interface ProblemRowProps {
+type ProblemRowProps = {
   problem: Problem;
-}
+} & Omit<React.ComponentProps<'div'>, 'children'>;
 
-export function ProblemRow({ problem }: ProblemRowProps) {
+export function ProblemRow({ problem, ...props }: ProblemRowProps) {
   const [isCompleted, setIsCompleted] = useState(problem.completed);
   const [isStarred, setIsStarred] = useState(problem.starred);
 
@@ -32,7 +33,7 @@ export function ProblemRow({ problem }: ProblemRowProps) {
   };
 
   return (
-    <div className="group hover:bg-slate-800/50 transition-colors">
+    <div className="group hover:bg-slate-800/50 transition-colors" {...props}>
       {/* Desktop Layout */}
       <div className="hidden md:grid md:grid-cols-12 gap-4 px-6 py-4 items-center">
         {/* Status */}
@@ -57,7 +58,9 @@ export function ProblemRow({ problem }: ProblemRowProps) {
           >
             <Star
               className={`w-5 h-5 ${
-                isStarred ? 'fill-amber-400 text-amber-400' : 'text-slate-600 hover:text-slate-500'
+                isStarred
+                  ? 'fill-amber-400 text-amber-400'
+                  : 'text-slate-600 hover:text-slate-500'
               }`}
             />
           </button>
@@ -74,7 +77,9 @@ export function ProblemRow({ problem }: ProblemRowProps) {
         <div className="col-span-2">
           <Badge
             variant="outline"
-            className={`${difficultyConfig[problem.difficulty].className} border rounded-full px-3 py-1`}
+            className={`${
+              difficultyConfig[problem.difficulty].className
+            } border rounded-full px-3 py-1`}
           >
             {problem.difficulty}
           </Badge>
@@ -126,7 +131,9 @@ export function ProblemRow({ problem }: ProblemRowProps) {
             <div className="flex items-center gap-2">
               <Badge
                 variant="outline"
-                className={`${difficultyConfig[problem.difficulty].className} border rounded-full px-3 py-1`}
+                className={`${
+                  difficultyConfig[problem.difficulty].className
+                } border rounded-full px-3 py-1`}
               >
                 {problem.difficulty}
               </Badge>

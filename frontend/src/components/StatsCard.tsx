@@ -1,3 +1,4 @@
+import React from 'react';
 import { CheckCircle2, Trophy } from 'lucide-react';
 
 interface StatsCardProps {
@@ -80,7 +81,7 @@ export function StatsCard({
 
       {/* Difficulty Breakdown */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {stats.map((stat) => (
+        {stats.map(stat => (
           <div
             key={stat.label}
             className={`p-4 rounded-xl border ${stat.bgColor} ${stat.borderColor}`}

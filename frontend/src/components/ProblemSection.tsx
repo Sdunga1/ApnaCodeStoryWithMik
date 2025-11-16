@@ -1,3 +1,4 @@
+import React from 'react';
 import { ChevronDown } from 'lucide-react';
 import { ProblemRow } from './ProblemRow';
 import { useState } from 'react';
@@ -11,21 +12,29 @@ interface Problem {
   hasVideo: boolean;
 }
 
-interface ProblemSectionProps {
+type ProblemSectionProps = {
   title: string;
   problems: Problem[];
   defaultOpen?: boolean;
-}
+} & Omit<React.ComponentProps<'div'>, 'children'>;
 
-export function ProblemSection({ title, problems, defaultOpen = false }: ProblemSectionProps) {
+export function ProblemSection({
+  title,
+  problems,
+  defaultOpen = false,
+  ...props
+}: ProblemSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
-  
+
   const completedCount = problems.filter(p => p.completed).length;
   const totalCount = problems.length;
   const progressPercentage = (completedCount / totalCount) * 100;
 
   return (
-    <div className="bg-gradient-to-br from-[#050505] to-[#1f0139] rounded-2xl border border-purple-900/30 overflow-hidden">
+    <div
+      className="bg-gradient-to-br from-[#050505] to-[#1f0139] rounded-2xl border border-purple-900/30 overflow-hidden"
+      {...props}
+    >
       {/* Section Header */}
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -44,7 +53,7 @@ export function ProblemSection({ title, problems, defaultOpen = false }: Problem
             </p>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-4">
           <div className="hidden sm:flex items-center gap-3">
             <div className="w-32 h-2 bg-slate-800 rounded-full overflow-hidden">
@@ -74,7 +83,7 @@ export function ProblemSection({ title, problems, defaultOpen = false }: Problem
 
           {/* Problem Rows */}
           <div className="divide-y divide-slate-800">
-            {problems.map((problem) => (
+            {problems.map(problem => (
               <ProblemRow key={problem.id} problem={problem} />
             ))}
           </div>
