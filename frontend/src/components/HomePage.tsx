@@ -11,6 +11,13 @@ import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import Header from './Header';
 import { useTheme } from '../contexts/ThemeContext';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
 
 interface DailyProblem {
   year: number;
@@ -833,13 +840,83 @@ export function HomePage() {
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between mb-4">
-                  <h3
-                    className={
-                      theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
-                    }
-                  >
-                    {MONTHS[currentMonth]} {currentYear}
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={currentMonth.toString()}
+                      onValueChange={value => setCurrentMonth(parseInt(value))}
+                    >
+                      <SelectTrigger
+                        className={`w-[120px] ${
+                          theme === 'dark'
+                            ? 'bg-slate-800 border-slate-700 text-slate-100'
+                            : 'bg-white border-slate-300 text-slate-900'
+                        }`}
+                      >
+                        <SelectValue>{MONTHS[currentMonth]}</SelectValue>
+                      </SelectTrigger>
+                      <SelectContent
+                        className={
+                          theme === 'dark'
+                            ? 'bg-slate-800 border-slate-700'
+                            : 'bg-white border-slate-300'
+                        }
+                      >
+                        {MONTHS.map((month, index) => (
+                          <SelectItem
+                            key={index}
+                            value={index.toString()}
+                            className={
+                              theme === 'dark'
+                                ? 'text-slate-100 focus:bg-slate-700'
+                                : 'text-slate-900 focus:bg-slate-100'
+                            }
+                          >
+                            {month}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={currentYear.toString()}
+                      onValueChange={value => setCurrentYear(parseInt(value))}
+                    >
+                      <SelectTrigger
+                        className={`w-[100px] ${
+                          theme === 'dark'
+                            ? 'bg-slate-800 border-slate-700 text-slate-100'
+                            : 'bg-white border-slate-300 text-slate-900'
+                        }`}
+                      >
+                        <SelectValue>{currentYear}</SelectValue>
+                      </SelectTrigger>
+                      <SelectContent
+                        className={
+                          theme === 'dark'
+                            ? 'bg-slate-800 border-slate-700'
+                            : 'bg-white border-slate-300'
+                        }
+                      >
+                        {Array.from({ length: 100 }, (_, i) => {
+                          const year = today.getFullYear() - 50 + i;
+                          return year;
+                        })
+                          .reverse()
+                          .map(year => (
+                            <SelectItem
+                              key={year}
+                              value={year.toString()}
+                              className={
+                                theme === 'dark'
+                                  ? 'text-slate-100 focus:bg-slate-700'
+                                  : 'text-slate-900 focus:bg-slate-100'
+                              }
+                            >
+                              {year}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="flex gap-2">
                     <button
                       onClick={handlePrevMonth}
