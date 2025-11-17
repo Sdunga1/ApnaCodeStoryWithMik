@@ -54,11 +54,7 @@ export function Sidebar({
             }`}
           />
         ) : (
-          <Moon
-            className={`w-5 h-5 ${
-              theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
-            }`}
-          />
+          <Moon className="w-5 h-5 text-slate-600" />
         )}
       </button>
 
