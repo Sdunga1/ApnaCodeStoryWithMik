@@ -1,0 +1,7 @@
+Recommended Architecture
+
+Frontend: Next.js
+Backend: Next.js API Routes / Server Actions (no separate server)
+Database: Supabase (PostgreSQL)
+Cache: Redis (later)
+Static Assets: Supabase Storage / Cloudflare R2

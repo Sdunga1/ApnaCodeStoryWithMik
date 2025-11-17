@@ -1,0 +1,72 @@
+erDiagram
+
+    creator_profile {
+        int id PK
+        string name
+        string email
+        string github
+        string youtube
+        string bio
+        string avatar_url
+    }
+
+    users {
+        uuid id PK
+        string name
+        string email
+        string password_hash
+        string avatar_url
+        datetime created_at
+    }
+
+    posts {
+        uuid id PK
+        string problem_name
+        string youtube_link
+        string lc_daily_link
+        string github_link
+        string motivational_quote
+        jsonb tags
+        jsonb extra_links
+        date post_date
+        datetime created_at
+    }
+
+    daily_problems {
+        uuid id PK
+        date problem_date
+        uuid post_id FK
+        uuid lc_problem_id FK
+    }
+
+    problems {
+        uuid id PK
+        string title
+        string difficulty
+        string topic
+        string lc_url
+        jsonb metadata
+    }
+
+    user_progress {
+        uuid id PK
+        uuid user_id FK
+        uuid problem_id FK
+        string status
+        datetime updated_at
+    }
+
+    updates {
+        uuid id PK
+        string title
+        string content
+        string link
+        date month_year
+        datetime created_at
+    }
+
+    %% RELATIONSHIPS
+    posts ||--|| daily_problems : "mapped_to"
+    daily_problems }o--|| problems : "lc_problem"
+    user_progress }o--|| users : "belongs_to"
+    user_progress }o--|| problems : "tracks"
