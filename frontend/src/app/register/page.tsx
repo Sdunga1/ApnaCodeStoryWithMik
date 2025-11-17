@@ -24,7 +24,7 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push('/dashboard');
+      router.push('/');
     }
   }, [isAuthenticated, router]);
 
@@ -66,7 +66,7 @@ export default function RegisterPage() {
     try {
       const result = await register(name.trim(), email.trim(), password);
       if (result.success) {
-        router.push('/dashboard');
+        router.push('/');
       } else {
         setError(result.error || 'Registration failed. Please try again.');
       }
