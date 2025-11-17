@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Home, BookOpen, List, X, Sun, Moon } from 'lucide-react';
-import { Avatar, AvatarFallback } from './ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Progress } from './ui/progress';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,7 +26,11 @@ export function Sidebar({
   const { theme, toggleTheme } = useTheme();
   const { user, isAuthenticated } = useAuth();
   const username =
-    isAuthenticated && user?.email ? user.email.split('@')[0] : 'dsa_learner';
+    isAuthenticated && user?.username
+      ? user.username
+      : isAuthenticated && user?.email
+      ? user.email.split('@')[0]
+      : 'dsa_learner';
   const showProgress = isAuthenticated && user?.role !== 'creator';
 
   const navItems = [
@@ -81,14 +85,6 @@ export function Sidebar({
             DSA Platform
           </p>
         </div>
-        <button
-          onClick={onClose}
-          className={`lg:hidden ml-2 p-2 rounded-lg transition-colors ${
-            theme === 'dark' ? 'hover:bg-slate-800' : 'hover:bg-slate-100'
-          }`}
-        >
-          <X className="w-5 h-5" />
-        </button>
       </div>
 
       {/* Navigation Links */}
@@ -130,6 +126,9 @@ export function Sidebar({
       >
         <div className="flex items-center gap-3 mb-4">
           <Avatar className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-700">
+            {isAuthenticated && user?.avatarUrl && (
+              <AvatarImage src={user.avatarUrl} alt={user.name} />
+            )}
             <AvatarFallback className="bg-transparent text-white">
               {isAuthenticated && user
                 ? user.name
@@ -145,7 +144,11 @@ export function Sidebar({
             <p
               className={theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}
             >
-              {isAuthenticated && user ? user.name : "Mik's Student"}
+              {isAuthenticated && user
+                ? user.name.length > 20
+                  ? `${user.name.slice(0, 20)}..`
+                  : user.name
+                : "Mik's Student"}
             </p>
             <p
               className={`${
@@ -193,6 +196,26 @@ export function Sidebar({
               }`}
             />
           </div>
+        )}
+
+        {isAuthenticated && (
+          <button
+            onClick={() => {
+              onViewChange('profile');
+              onClose();
+            }}
+            className={`mt-4 w-full rounded-xl border px-4 py-2 text-sm font-medium transition ${
+              activeView === 'profile'
+                ? theme === 'dark'
+                  ? 'bg-purple-500/10 border-purple-500/20 text-purple-200'
+                  : 'bg-purple-50 border-purple-200 text-purple-700'
+                : theme === 'dark'
+                ? 'border-purple-900/40 text-purple-200 hover:bg-purple-900/20'
+                : 'border-purple-200 text-purple-700 hover:bg-purple-50'
+            }`}
+          >
+            Manage profile
+          </button>
         )}
       </div>
     </div>

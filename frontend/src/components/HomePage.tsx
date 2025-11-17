@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
-import Header from './Header';
 import { useTheme } from '../contexts/ThemeContext';
 import {
   Select,
@@ -584,11 +583,10 @@ export function HomePage() {
 
   return (
     <div className="h-full overflow-auto">
-      <Header />
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 pt-0">
         {/* Motivational Quote */}
         <Card
-          className={`p-6 rounded-2xl ${
+          className={`p-6 mt-4 sm:mt-6 rounded-2xl ${
             theme === 'dark'
               ? 'bg-gradient-to-br from-slate-900/50 to-purple-900/30 border-purple-500/30'
               : 'bg-gradient-to-br from-slate-50 to-purple-50 border-purple-200'
