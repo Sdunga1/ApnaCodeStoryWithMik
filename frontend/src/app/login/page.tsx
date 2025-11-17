@@ -22,8 +22,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      const redirectPath = user?.role === 'creator' ? '/creator' : '/dashboard';
-      router.push(redirectPath);
+      router.push('/');
     }
   }, [isAuthenticated, user, router]);
 
@@ -55,8 +54,7 @@ export default function LoginPage() {
     try {
       const result = await login(email, password);
       if (result.success) {
-        const redirectPath = user?.role === 'creator' ? '/creator' : '/dashboard';
-        router.push(redirectPath);
+        router.push('/');
       } else {
         setError(result.error || 'Invalid email or password');
       }
