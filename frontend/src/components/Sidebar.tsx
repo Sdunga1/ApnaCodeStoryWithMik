@@ -25,6 +25,9 @@ export function Sidebar({
   const progressPercentage = (completedProblems / totalProblems) * 100;
   const { theme, toggleTheme } = useTheme();
   const { user, isAuthenticated } = useAuth();
+  const username =
+    isAuthenticated && user?.email ? user.email.split('@')[0] : 'dsa_learner';
+  const showProgress = isAuthenticated && user?.role !== 'creator';
 
   const navItems = [
     { icon: Home, label: 'Home', value: 'home' },
@@ -145,9 +148,11 @@ export function Sidebar({
               {isAuthenticated && user ? user.name : "Mik's Student"}
             </p>
             <p
-              className={theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}
+              className={`${
+                theme === 'dark' ? 'text-slate-500' : 'text-slate-600'
+              } text-sm`}
             >
-              {isAuthenticated && user ? user.email : '@dsa_learner'}
+              @{username}
               {isAuthenticated && user?.role === 'creator' && (
                 <span
                   className={`ml-2 text-xs px-2 py-0.5 rounded ${
@@ -163,28 +168,32 @@ export function Sidebar({
           </div>
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span
-              className={theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}
-            >
-              Progress
-            </span>
-            <span
-              className={
-                theme === 'dark' ? 'text-purple-400' : 'text-purple-600'
-              }
-            >
-              {completedProblems}/{totalProblems}
-            </span>
+        {showProgress && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span
+                className={
+                  theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+                }
+              >
+                Progress
+              </span>
+              <span
+                className={
+                  theme === 'dark' ? 'text-purple-400' : 'text-purple-600'
+                }
+              >
+                {completedProblems}/{totalProblems}
+              </span>
+            </div>
+            <Progress
+              value={progressPercentage}
+              className={`h-2 ${
+                theme === 'dark' ? 'bg-slate-800' : 'bg-slate-200'
+              }`}
+            />
           </div>
-          <Progress
-            value={progressPercentage}
-            className={`h-2 ${
-              theme === 'dark' ? 'bg-slate-800' : 'bg-slate-200'
-            }`}
-          />
-        </div>
+        )}
       </div>
     </div>
   );

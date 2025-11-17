@@ -174,43 +174,48 @@ const Header = () => {
         className="bg-black w-full flex items-center justify-center rounded-b-[10px] overflow-hidden header-container"
         style={{ backgroundColor: '#000' }}
       >
-        <div className="flex justify-center items-center w-full max-w-[1200px] flex-wrap header-content">
-          <div className="flex-none flex items-center justify-center relative header-logo">
-            <Image
-              src="/pic.jpg"
-              alt="Logo"
-              width={122}
-              height={122}
-              className="w-auto h-auto object-contain block"
-              priority
-            />
-          </div>
-          <div
-            className="flex flex-col items-center justify-center text-center header-heading-div"
-            style={{ gap: '0.38rem' }}
-          >
-            <div
-              className="rounded-full flex justify-center items-center text-white font-bold whitespace-nowrap p-0 text-center leading-none header-main-heading"
-              style={{ color: '#fff' }}
-            >
-              codestorywith
-              <span
-                className="text-[rgb(164,222,78)]"
-                style={{ color: 'rgb(164,222,78)' }}
-              >
-                MIK
-              </span>
+        <div className="relative flex flex-col md:flex-row items-center justify-center w-full max-w-[1200px] px-4 gap-4 md:gap-0">
+          <div className="flex justify-center items-center w-full flex-wrap header-content">
+            <div className="flex-none flex items-center justify-center relative header-logo">
+              <Image
+                src="/pic.jpg"
+                alt="Logo"
+                width={122}
+                height={122}
+                className="w-auto h-auto object-contain block"
+                priority
+              />
             </div>
-            <p
-              className="text-[rgb(227,223,223)] italic m-0 p-0 leading-tight header-sub-heading"
-              style={{ color: 'rgb(227,223,223)' }}
+            <div
+              className="flex flex-col items-center justify-center text-center header-heading-div"
+              style={{ gap: '0.38rem' }}
             >
-              &apos;Aao, story se code likhe&apos;
-            </p>
+              <div
+                className="rounded-full flex justify-center items-center text-white font-bold whitespace-nowrap p-0 text-center leading-none header-main-heading"
+                style={{ color: '#fff' }}
+              >
+                codestorywith
+                <span
+                  className="text-[rgb(164,222,78)]"
+                  style={{ color: 'rgb(164,222,78)' }}
+                >
+                  MIK
+                </span>
+              </div>
+              <p
+                className="text-[rgb(227,223,223)] italic m-0 p-0 leading-tight header-sub-heading"
+                style={{ color: 'rgb(227,223,223)' }}
+              >
+                &apos;Aao, story se code likhe&apos;
+              </p>
+            </div>
           </div>
 
           {isAuthenticated && user && (
-            <div className="flex items-center gap-4 ml-auto">
+            <div
+              className="flex w-full items-center justify-center gap-4 mt-4 md:mt-0 md:w-auto md:justify-end md:absolute md:right-0 md:top-1/2 md:-translate-y-1/2"
+              aria-label="User actions"
+            >
               <div className="flex items-center gap-2 text-white">
                 <UserIcon className="w-5 h-5" />
                 <span className="text-sm">{user.name}</span>
@@ -233,7 +238,10 @@ const Header = () => {
           )}
 
           {!isAuthenticated && (
-            <div className="flex items-center gap-2 ml-auto">
+            <div
+              className="flex w-full items-center justify-center gap-2 mt-4 md:mt-0 md:w-auto md:justify-end md:absolute md:right-0 md:top-1/2 md:-translate-y-1/2"
+              aria-label="Auth actions"
+            >
               <Link href="/login">
                 <Button
                   variant="outline"
