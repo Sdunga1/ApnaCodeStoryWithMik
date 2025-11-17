@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { CheckCircle2, Circle, Star, Video } from 'lucide-react';
 import { Badge } from './ui/badge';

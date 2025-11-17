@@ -1,3 +1,5 @@
+'use client';
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 type Theme = 'dark' | 'light';
@@ -15,8 +17,20 @@ interface ThemeProviderProps {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>('dark');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+    // Load theme from localStorage if available
+    const savedTheme = localStorage.getItem('theme') as Theme | null;
+    if (savedTheme) {
+      setTheme(savedTheme);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    
     // Apply theme to document root
     const root = document.documentElement;
     if (theme === 'light') {
@@ -26,18 +40,26 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       root.classList.add('dark');
       root.classList.remove('light');
     }
-  }, [theme]);
+    
+    // Save theme to localStorage
+    localStorage.setItem('theme', theme);
+  }, [theme, mounted]);
 
   const toggleTheme = () => {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
+
+  // Prevent flash of unstyled content
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
-}
+};
 
 export function useTheme() {
   const context = useContext(ThemeContext);

@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import profilePic from '../assets/pic.jpg';
+import Image from 'next/image';
 
 const Header = () => {
   return (
@@ -160,11 +162,14 @@ const Header = () => {
         style={{ backgroundColor: '#000' }}
       >
         <div className="flex justify-center items-center w-full max-w-[1200px] flex-wrap header-content">
-          <div className="flex-none flex items-center justify-center">
-            <img
-              src={profilePic}
+          <div className="flex-none flex items-center justify-center relative header-logo">
+            <Image
+              src="/pic.jpg"
               alt="Logo"
-              className="w-auto object-contain block header-logo"
+              width={122}
+              height={122}
+              className="w-auto h-auto object-contain block"
+              priority
             />
           </div>
           <div

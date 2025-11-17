@@ -1,0 +1,20 @@
+Files from Previous Vite Configuration
+
+The following files are no longer needed and can be safely removed:
+
+Configuration:
+- vite.config.ts
+
+Entry Points:
+- index.html
+- src/main.tsx
+- src/App.tsx
+
+Type Definitions:
+- src/vite-env.d.ts
+
+Assets:
+- src/assets/ (moved to public/)
+
+Note: Verify the Next.js application is working correctly before removing these files.
+

@@ -1,0 +1,37 @@
+# Old Vite Files - Safe to Delete After Verification
+
+These files are from the old Vite setup and are no longer needed:
+
+## Configuration Files
+- vite.config.ts (replaced by next.config.js)
+- index.html (Next.js doesn't need this)
+
+## Entry Points
+- src/main.tsx (replaced by src/app/layout.tsx and src/app/page.tsx)
+- src/App.tsx (moved logic to src/app/page.tsx)
+
+## Type Definitions
+- src/vite-env.d.ts (replaced by next-env.d.ts)
+
+## Assets (already copied to public/)
+- src/assets/pic.jpg (now in public/pic.jpg)
+
+## Recommendation:
+DO NOT DELETE THESE YET! First verify that the Next.js version works correctly:
+
+1. Run: npm install
+2. Run: npm run dev
+3. Test all functionality
+4. Once confirmed working, you can safely delete these files
+
+## Delete Command (Run only after verification):
+```bash
+# From the frontend/ directory
+rm vite.config.ts
+rm index.html
+rm src/main.tsx
+rm src/App.tsx
+rm src/vite-env.d.ts
+rm -rf src/assets/
+```
+

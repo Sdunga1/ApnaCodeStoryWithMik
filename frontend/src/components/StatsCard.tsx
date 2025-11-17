@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { CheckCircle2, Trophy } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
