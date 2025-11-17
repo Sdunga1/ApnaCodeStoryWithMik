@@ -1,0 +1,75 @@
+==============================================================================
+PostgreSQL Database Connection Information
+==============================================================================
+
+DATABASE NAME:    apnacodestory
+USER:             ashishthanga
+HOST:             localhost
+PORT:             5432 (default)
+
+==============================================================================
+Quick Connection Commands
+==============================================================================
+
+# Connect to database
+psql -U ashishthanga -d apnacodestory
+
+# Connect and run a query
+psql -U ashishthanga -d apnacodestory -c "SELECT * FROM users;"
+
+# Connect and run a SQL file
+psql -U ashishthanga -d apnacodestory -f your_file.sql
+
+# List all tables
+psql -U ashishthanga -d apnacodestory -c "\dt"
+
+# List all functions
+psql -U ashishthanga -d apnacodestory -c "\df"
+
+# Describe a specific table
+psql -U ashishthanga -d apnacodestory -c "\d users"
+
+==============================================================================
+Service Management
+==============================================================================
+
+# Check PostgreSQL service status
+brew services list | grep postgresql
+
+# Start PostgreSQL
+brew services start postgresql@14
+
+# Stop PostgreSQL
+brew services stop postgresql@14
+
+# Restart PostgreSQL
+brew services restart postgresql@14
+
+==============================================================================
+Connection String for Applications
+==============================================================================
+
+# Standard connection string
+postgresql://ashishthanga@localhost:5432/apnacodestory
+
+# For Next.js .env file
+DATABASE_URL="postgresql://ashishthanga@localhost:5432/apnacodestory"
+
+# For Supabase-style projects
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=apnacodestory
+POSTGRES_USER=ashishthanga
+
+==============================================================================
+Database Statistics
+==============================================================================
+
+✓ 9 Tables Created
+✓ 41 Indexes Created
+✓ 6 Utility Functions Created
+✓ 6 Triggers Created
+✓ 29 Tags Seeded
+
+==============================================================================
+
