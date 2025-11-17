@@ -401,6 +401,7 @@ export function ProfileContent() {
               type="button"
               variant="ghost"
               disabled={saving || !isDirty}
+              className="border border-slate-700/70 bg-transparent text-slate-300 transition-all duration-200 cursor-pointer hover:border-slate-400 hover:bg-slate-800/60 hover:text-slate-50 hover:shadow-[0_0_0_1px_rgba(148,163,184,0.6)] hover:-translate-y-px disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-slate-700/70 disabled:hover:text-slate-300"
               onClick={() => {
                 if (!initialData) return;
                 setForm({
@@ -418,8 +419,20 @@ export function ProfileContent() {
             >
               Reset
             </Button>
-            <Button type="submit" disabled={saving || !isDirty}>
-              {saving ? 'Saving...' : 'Save changes'}
+            <Button
+              type="submit"
+              disabled={saving || !isDirty}
+              className="group relative inline-flex items-center justify-center overflow-hidden rounded-full border-0 bg-gradient-to-r from-purple-600 to-blue-500 p-[1.5px] shadow-sm transition-all duration-200 cursor-pointer hover:shadow-[0_18px_45px_rgba(139,92,246,0.55)] hover:-translate-y-[1.5px] disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:translate-y-0"
+            >
+              <span
+                className={`flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-full transition-all ${
+                  saving || !isDirty
+                    ? 'bg-slate-950 text-slate-500'
+                    : 'bg-slate-950 text-white group-hover:bg-transparent group-hover:dark:bg-transparent group-hover:text-white'
+                }`}
+              >
+                {saving ? 'Saving...' : 'Save changes'}
+              </span>
             </Button>
           </div>
         </form>
