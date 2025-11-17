@@ -29,6 +29,11 @@ CREATE TABLE users (
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(20) DEFAULT 'student' CHECK (role IN ('creator', 'student')),
+    username VARCHAR(40),
+    bio TEXT,
+    location VARCHAR(120),
+    website_url TEXT,
+    twitter_handle VARCHAR(60),
     avatar_url TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -112,6 +117,7 @@ CREATE INDEX idx_users_created_at ON users(created_at);
 CREATE INDEX idx_users_is_deleted ON users(is_deleted);
 CREATE INDEX idx_users_deleted_at ON users(deleted_at) WHERE deleted_at IS NOT NULL;
 CREATE INDEX idx_users_role ON users(role);
+CREATE UNIQUE INDEX IF NOT EXISTS users_username_unique ON users (LOWER(username)) WHERE username IS NOT NULL;
 
 -- Posts
 CREATE INDEX idx_posts_post_date ON posts(post_date DESC);

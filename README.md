@@ -6,7 +6,7 @@ A community platform for the CodeStoryWithMIK Family! This hub centralizes daily
 
 ```
 ├── frontend/          Next.js 14 (App Router) UI + API routes
-│   └── src/app/api/   Auth routes (login, register, logout, me)
+│   └── src/app/api/   Auth + profile routes
 └── database/          SQL schema and migrations for PostgreSQL
 ```
 
@@ -45,6 +45,7 @@ createdb apnacodestory           # or use psql command
 psql -d apnacodestory -f database/schema.sql
 psql -d apnacodestory -f database/migrations/006_add_user_roles.sql
 psql -d apnacodestory -f database/migrations/007_seed_creator_user.sql
+psql -d apnacodestory -f database/migrations/008_add_profile_fields.sql
 
 # 3. Start the dev server
 npm run dev
@@ -64,6 +65,7 @@ The site and API are served from `http://localhost:3000`.
 - JWT sessions with role awareness (`creator`, `student`).
 - PostgreSQL persistence via node-postgres and prepared statements.
 - Basic progress tracking UI for students (creators skip progress meters as requested).
+- Profile management page for updating avatar, username, and bio fields.
 
 ## API Summary
 
@@ -73,6 +75,8 @@ The site and API are served from `http://localhost:3000`.
 | POST   | `/api/auth/login`    | Issue JWT + session   | No   |
 | POST   | `/api/auth/logout`   | Clear auth cookie     | Yes  |
 | GET    | `/api/auth/me`       | Current user profile  | Yes  |
+| GET    | `/api/profile`       | Detailed profile data | Yes  |
+| PUT    | `/api/profile`       | Update profile fields | Yes  |
 
 All routes rely on the shared JWT helpers in `src/lib/jwt.ts`. Requests require the `Authorization: Bearer <token>` header once logged in.
 

@@ -5,6 +5,12 @@ export interface User {
   email: string;
   name: string;
   role: 'creator' | 'student';
+  username?: string | null;
+  bio?: string | null;
+  location?: string | null;
+  websiteUrl?: string | null;
+  twitterHandle?: string | null;
+  avatarUrl?: string | null;
 }
 
 export interface AuthResponse {
@@ -23,6 +29,22 @@ export interface RegisterData {
   name: string;
   email: string;
   password: string;
+}
+
+export interface ProfileUpdatePayload {
+  name?: string;
+  username?: string;
+  bio?: string;
+  location?: string;
+  websiteUrl?: string;
+  twitterHandle?: string;
+  avatarData?: string | null;
+}
+
+interface ProfileResponse {
+  success: boolean;
+  user: User;
+  error?: string;
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -162,5 +184,41 @@ export function getStoredUser(): User | null {
   } catch {
     return null;
   }
+}
+
+async function authedFetch(path: string, options: RequestInit = {}) {
+  const token = getStoredToken();
+  if (!token) {
+    throw new Error('Not authenticated');
+  }
+
+  return fetch(`${API_URL}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      ...(options.headers || {}),
+    },
+  });
+}
+
+export async function getProfile(): Promise<User> {
+  const response = await authedFetch('/profile', { method: 'GET' });
+  const data = await handleResponse<ProfileResponse>(response);
+  return data.user;
+}
+
+export async function updateProfile(payload: ProfileUpdatePayload): Promise<User> {
+  const response = await authedFetch('/profile', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+  const data = await handleResponse<ProfileResponse>(response);
+  if (!data.success) {
+    throw new Error(data.error || 'Failed to update profile');
+  }
+  localStorage.setItem('user', JSON.stringify(data.user));
+  setCookie('user', JSON.stringify(data.user), 7);
+  return data.user;
 }
 

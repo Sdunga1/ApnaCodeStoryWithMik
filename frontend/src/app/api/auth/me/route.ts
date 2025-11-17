@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { extractTokenFromHeader, verifyToken } from '@/lib/jwt';
+import { formatUser } from '@/lib/user';
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,7 +31,9 @@ export async function GET(request: NextRequest) {
 
     // Query database for user details
     const result = await query(
-      'SELECT id, name, email, role FROM users WHERE id = $1 AND is_deleted = FALSE',
+      `SELECT id, name, email, role, username, bio, location, website_url, twitter_handle, avatar_url
+       FROM users
+       WHERE id = $1 AND is_deleted = FALSE`,
       [userId]
     );
 
@@ -47,12 +50,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-        },
+        user: formatUser(user),
       },
       { status: 200 }
     );

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { query } from '@/lib/db';
 import { generateToken } from '@/lib/jwt';
+import { formatUser } from '@/lib/user';
 
 export async function POST(request: NextRequest) {
   try {
@@ -60,7 +61,9 @@ export async function POST(request: NextRequest) {
 
     // Insert new user with role = 'student' (default)
     const result = await query(
-      'INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING id, name, email, role',
+      `INSERT INTO users (name, email, password_hash, role)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, name, email, role, username, bio, location, website_url, twitter_handle, avatar_url`,
       [name.trim(), email.trim(), passwordHash, 'student']
     );
 
@@ -74,12 +77,7 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         token,
-        user: {
-          id: newUser.id,
-          email: newUser.email,
-          name: newUser.name,
-          role: newUser.role,
-        },
+        user: formatUser(newUser),
       },
       { status: 200 }
     );

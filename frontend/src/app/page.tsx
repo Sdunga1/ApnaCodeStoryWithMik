@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { HomePage } from '@/components/HomePage';
+import { ProfileContent } from '@/components/ProfileContent';
+import Header from '@/components/Header';
 import { StatsCard } from '@/components/StatsCard';
 import { ProblemSection } from '@/components/ProblemSection';
 import { Search, Menu, X } from 'lucide-react';
@@ -488,44 +490,14 @@ export default function Home() {
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
-        {activeView === 'home' ? (
-          <>
-            {/* Mobile menu button */}
-            <div className="lg:hidden p-4">
-              <button
-                className={`p-2 rounded-lg transition-colors ${
-                  theme === 'dark'
-                    ? 'bg-slate-900 hover:bg-slate-800'
-                    : 'bg-slate-100 hover:bg-slate-200'
-                }`}
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-              >
-                {sidebarOpen ? (
-                  <X className="w-6 h-6" />
-                ) : (
-                  <Menu className="w-6 h-6" />
-                )}
-              </button>
-            </div>
+        <Header onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} sidebarOpen={sidebarOpen} />
+        <div className="pt-[220px] md:pt-[152px]">
+          {activeView === 'home' ? (
             <HomePage />
-          </>
-        ) : activeView === 'practice' ? (
+          ) : activeView === 'profile' ? (
+            <ProfileContent />
+          ) : activeView === 'practice' ? (
           <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-            {/* Mobile menu button */}
-            <button
-              className={`lg:hidden mb-4 p-2 rounded-lg transition-colors ${
-                theme === 'dark'
-                  ? 'bg-slate-900 hover:bg-slate-800'
-                  : 'bg-slate-100 hover:bg-slate-200'
-              }`}
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            >
-              {sidebarOpen ? (
-                <X className="w-6 h-6" />
-              ) : (
-                <Menu className="w-6 h-6" />
-              )}
-            </button>
 
             {/* Header */}
             <div className="mb-8">
@@ -605,21 +577,6 @@ export default function Home() {
           </div>
         ) : (
           <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-            {/* Mobile menu button */}
-            <button
-              className={`lg:hidden mb-4 p-2 rounded-lg transition-colors ${
-                theme === 'dark'
-                  ? 'bg-slate-900 hover:bg-slate-800'
-                  : 'bg-slate-100 hover:bg-slate-200'
-              }`}
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            >
-              {sidebarOpen ? (
-                <X className="w-6 h-6" />
-              ) : (
-                <Menu className="w-6 h-6" />
-              )}
-            </button>
 
             <div className="text-center py-16">
               <h2
@@ -638,7 +595,8 @@ export default function Home() {
               </p>
             </div>
           </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

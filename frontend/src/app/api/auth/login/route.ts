@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { query } from '@/lib/db';
 import { generateToken } from '@/lib/jwt';
+import { formatUser } from '@/lib/user';
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,7 +28,9 @@ export async function POST(request: NextRequest) {
 
     // Query database for user by email
     const result = await query(
-      'SELECT id, name, email, password_hash, role FROM users WHERE email = $1 AND is_deleted = FALSE',
+      `SELECT id, name, email, password_hash, role, username, bio, location, website_url, twitter_handle, avatar_url
+       FROM users
+       WHERE email = $1 AND is_deleted = FALSE`,
       [email]
     );
 
@@ -58,12 +61,7 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         token,
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-        },
+        user: formatUser(user),
       },
       { status: 200 }
     );

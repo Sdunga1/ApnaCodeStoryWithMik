@@ -6,9 +6,14 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from './ui/button';
-import { LogOut, User as UserIcon } from 'lucide-react';
+import { LogOut, User as UserIcon, Menu, X } from 'lucide-react';
 
-const Header = () => {
+interface HeaderProps {
+  onToggleSidebar?: () => void;
+  sidebarOpen?: boolean;
+}
+
+const Header: React.FC<HeaderProps> = ({ onToggleSidebar, sidebarOpen }) => {
   const { user, isAuthenticated, logout } = useAuth();
   const router = useRouter();
 
@@ -86,11 +91,12 @@ const Header = () => {
           
           .header-content {
             flex-direction: column;
-            gap: clamp(0.75rem, 2vw, 1rem);
+            gap: clamp(0.5rem, 1.5vw, 0.75rem);
           }
           
           .header-logo {
             height: clamp(46px, 11.4vh, 68px);
+            margin-top: 0.5rem;
           }
           
           .header-heading-div {
@@ -102,11 +108,11 @@ const Header = () => {
             height: clamp(34px, 6.08vw, 42px);
             min-width: clamp(34px, 6.08vw, 42px);
             min-height: clamp(34px, 6.08vw, 42px);
-            font-size: clamp(0.67rem, 1.52vw, 0.86rem);
+            font-size: clamp(0.84rem, 1.9vw, 1.075rem);
           }
           
           .header-sub-heading {
-            font-size: clamp(0.49rem, 0.76vw, 0.61rem);
+            font-size: clamp(0.61rem, 0.95vw, 0.76rem);
           }
         }
         
@@ -122,6 +128,7 @@ const Header = () => {
           
           .header-logo {
             height: clamp(38px, 9.12vh, 53px);
+            margin-top: 0.35rem;
           }
           
           .header-main-heading {
@@ -129,7 +136,7 @@ const Header = () => {
             height: clamp(30px, 5.32vw, 38px);
             min-width: clamp(30px, 5.32vw, 38px);
             min-height: clamp(30px, 5.32vw, 38px);
-            font-size: clamp(0.57rem, 1.33vw, 0.76rem);
+            font-size: clamp(0.71rem, 1.66vw, 0.95rem);
           }
           
           .header-heading-div {
@@ -137,7 +144,7 @@ const Header = () => {
           }
           
           .header-sub-heading {
-            font-size: clamp(0.46rem, 0.68vw, 0.53rem);
+            font-size: clamp(0.57rem, 0.85vw, 0.66rem);
           }
         }
         /* Force header to always be dark mode - override any light mode styles */
@@ -171,10 +178,34 @@ const Header = () => {
         }
       `}</style>
       <header
-        className="bg-black w-full flex items-center justify-center rounded-b-[10px] overflow-hidden header-container"
+        className="fixed top-0 left-0 lg:left-72 right-0 z-40 bg-black flex items-center justify-center rounded-b-[10px] overflow-hidden header-container"
         style={{ backgroundColor: '#000' }}
+        onClick={() => {
+          if (sidebarOpen && onToggleSidebar && typeof window !== 'undefined') {
+            if (window.innerWidth < 1024) {
+              onToggleSidebar();
+            }
+          }
+        }}
       >
         <div className="relative flex flex-col md:flex-row items-center justify-center w-full max-w-[1200px] px-4 gap-4 md:gap-0">
+          {onToggleSidebar && (
+            <button
+              type="button"
+              onClick={event => {
+                event.stopPropagation();
+                onToggleSidebar();
+              }}
+              className="absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-black/70 text-white shadow-sm transition-colors lg:hidden"
+              aria-label="Toggle navigation menu"
+            >
+              {sidebarOpen ? (
+                <X className="w-5 h-5" />
+              ) : (
+                <Menu className="w-5 h-5" />
+              )}
+            </button>
+          )}
           <div className="flex justify-center items-center w-full flex-wrap header-content">
             <div className="flex-none flex items-center justify-center relative header-logo">
               <Image
@@ -218,7 +249,11 @@ const Header = () => {
             >
               <div className="flex items-center gap-2 text-white">
                 <UserIcon className="w-5 h-5" />
-                <span className="text-sm">{user.name}</span>
+                <span className="text-sm">
+                  {user.name.length > 20
+                    ? `${user.name.slice(0, 20)}..`
+                    : user.name}
+                </span>
                 {user.role === 'creator' && (
                   <span className="text-xs bg-purple-600 px-2 py-1 rounded">
                     Creator
