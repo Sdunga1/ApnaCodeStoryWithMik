@@ -1,9 +1,22 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from './ui/button';
+import { LogOut, User as UserIcon } from 'lucide-react';
 
 const Header = () => {
+  const { user, isAuthenticated, logout } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/login');
+  };
+
   return (
     <>
       <style>{`
@@ -195,6 +208,43 @@ const Header = () => {
               &apos;Aao, story se code likhe&apos;
             </p>
           </div>
+
+          {isAuthenticated && user && (
+            <div className="flex items-center gap-4 ml-auto">
+              <div className="flex items-center gap-2 text-white">
+                <UserIcon className="w-5 h-5" />
+                <span className="text-sm">{user.name}</span>
+                {user.role === 'creator' && (
+                  <span className="text-xs bg-purple-600 px-2 py-1 rounded">
+                    Creator
+                  </span>
+                )}
+              </div>
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                size="sm"
+                className="bg-transparent border-white/20 text-white hover:bg-white/10"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </Button>
+            </div>
+          )}
+
+          {!isAuthenticated && (
+            <div className="flex items-center gap-2 ml-auto">
+              <Link href="/login">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-transparent border-white/20 text-white hover:bg-white/10"
+                >
+                  Sign In
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
       </header>
     </>

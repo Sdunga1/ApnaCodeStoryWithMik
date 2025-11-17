@@ -5,6 +5,7 @@ import { Home, BookOpen, List, X, Sun, Moon } from 'lucide-react';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Progress } from './ui/progress';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface SidebarProps {
   completedProblems: number;
@@ -23,6 +24,7 @@ export function Sidebar({
 }: SidebarProps) {
   const progressPercentage = (completedProblems / totalProblems) * 100;
   const { theme, toggleTheme } = useTheme();
+  const { user, isAuthenticated } = useAuth();
 
   const navItems = [
     { icon: Home, label: 'Home', value: 'home' },
@@ -126,19 +128,37 @@ export function Sidebar({
         <div className="flex items-center gap-3 mb-4">
           <Avatar className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-700">
             <AvatarFallback className="bg-transparent text-white">
-              MK
+              {isAuthenticated && user
+                ? user.name
+                    .split(' ')
+                    .map(n => n[0])
+                    .join('')
+                    .toUpperCase()
+                    .slice(0, 2) || 'U'
+                : 'MK'}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
             <p
               className={theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}
             >
-              Mik's Student
+              {isAuthenticated && user ? user.name : "Mik's Student"}
             </p>
             <p
               className={theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}
             >
-              @dsa_learner
+              {isAuthenticated && user ? user.email : '@dsa_learner'}
+              {isAuthenticated && user?.role === 'creator' && (
+                <span
+                  className={`ml-2 text-xs px-2 py-0.5 rounded ${
+                    theme === 'dark'
+                      ? 'bg-purple-500/20 text-purple-400'
+                      : 'bg-purple-100 text-purple-600'
+                  }`}
+                >
+                  Creator
+                </span>
+              )}
             </p>
           </div>
         </div>
