@@ -44,10 +44,12 @@ CREATE TABLE users (
 CREATE TABLE posts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     problem_name VARCHAR(500) NOT NULL,
+    difficulty VARCHAR(20) CHECK (difficulty IN ('Easy', 'Medium', 'Hard')),
     youtube_link TEXT,
     lc_daily_link TEXT,
     github_link TEXT,
     motivational_quote TEXT,
+    thumbnail_url TEXT,
     tags JSONB DEFAULT '[]'::jsonb,
     extra_links JSONB DEFAULT '{}'::jsonb,
     post_date DATE NOT NULL UNIQUE,

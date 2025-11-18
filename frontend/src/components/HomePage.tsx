@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -19,18 +19,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
+import { format } from 'date-fns';
+import { ImageWithFallback } from './figma/ImageWithFallback';
 
-interface DailyProblem {
-  year: number;
-  month: number;
-  day: number;
-  title: string;
+interface Post {
+  id: string;
+  problemName: string;
   difficulty: 'Easy' | 'Medium' | 'Hard';
-  description: string;
+  postDate: string;
+  thumbnailUrl: string;
   youtubeLink: string;
   leetcodeLink: string;
   githubLink: string;
+  motivationalQuote: string | null;
   tags: string[];
+  extraLinks: Record<string, string>;
+  createdAt: string;
 }
 
 interface RecentUpdate {
@@ -41,8 +45,8 @@ interface RecentUpdate {
   link: string;
 }
 
-// Comprehensive dummy data for multiple months
-const ALL_PROBLEMS: DailyProblem[] = [
+// Legacy dummy data - will be replaced by API data
+const ALL_PROBLEMS_LEGACY: any[] = [
   // November 2024
   {
     year: 2024,
@@ -450,66 +454,77 @@ export function HomePage() {
     month: today.getMonth(),
     day: today.getDate(),
   });
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch posts from API
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const response = await fetch('/api/posts?limit=100');
+        const data = await response.json();
+        if (data.success) {
+          setPosts(data.posts || []);
+        }
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, []);
 
   // Get days in current month
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  // Get problems for the current viewing month
-  const monthProblems = useMemo(() => {
-    return ALL_PROBLEMS.filter(
-      p => p.year === currentYear && p.month === currentMonth
-    ).sort((a, b) => b.day - a.day);
-  }, [currentYear, currentMonth]);
-
-  // Get the selected problem
-  const selectedProblem = useMemo(() => {
-    return (
-      ALL_PROBLEMS.find(
-        p =>
-          p.year === selectedDate.year &&
-          p.month === selectedDate.month &&
-          p.day === selectedDate.day
-      ) ||
-      ALL_PROBLEMS.find(
-        p =>
-          p.year === today.getFullYear() &&
-          p.month === today.getMonth() &&
-          p.day === today.getDate()
-      ) ||
-      ALL_PROBLEMS[0]
-    );
-  }, [selectedDate]);
-
-  // Get reconfigured problem list based on selected date
-  const reconfiguredProblems = useMemo(() => {
-    const selected = ALL_PROBLEMS.find(
-      p =>
-        p.year === selectedDate.year &&
-        p.month === selectedDate.month &&
-        p.day === selectedDate.day
-    );
-
-    if (!selected) return monthProblems.slice(0, 4);
-
-    // Get all problems from selected date onwards (going backwards in time)
-    const allProblemsFromDate = ALL_PROBLEMS.filter(p => {
-      const pDate = new Date(p.year, p.month, p.day);
-      const sDate = new Date(
-        selectedDate.year,
-        selectedDate.month,
-        selectedDate.day
-      );
-      return pDate <= sDate;
+  // Get posts for the current viewing month
+  const monthPosts = useMemo(() => {
+    return posts.filter(post => {
+      const postDate = new Date(post.postDate);
+      return postDate.getFullYear() === currentYear && postDate.getMonth() === currentMonth;
     }).sort((a, b) => {
-      const dateA = new Date(a.year, a.month, a.day);
-      const dateB = new Date(b.year, b.month, b.day);
+      const dateA = new Date(a.postDate);
+      const dateB = new Date(b.postDate);
       return dateB.getTime() - dateA.getTime();
     });
+  }, [posts, currentYear, currentMonth]);
 
-    return allProblemsFromDate.slice(0, 4);
-  }, [selectedDate, monthProblems]);
+  // Get the selected post
+  const selectedPost = useMemo(() => {
+    const selectedDateStr = format(
+      new Date(selectedDate.year, selectedDate.month, selectedDate.day),
+      'yyyy-MM-dd'
+    );
+
+    return (
+      posts.find(
+        p => format(new Date(p.postDate), 'yyyy-MM-dd') === selectedDateStr
+      ) ||
+      posts.find(
+        p => format(new Date(p.postDate), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')
+      ) ||
+      posts[0]
+    );
+  }, [posts, selectedDate, today]);
+
+  // Get recent posts list
+  const recentPosts = useMemo(() => {
+    return monthPosts.slice(0, 4);
+  }, [monthPosts]);
+
+  const updateCalendarDate = useCallback((date: Date) => {
+    setCurrentMonth(date.getMonth());
+    setCurrentYear(date.getFullYear());
+    setSelectedDate({
+      year: date.getFullYear(),
+      month: date.getMonth(),
+      day: date.getDate(),
+    });
+  }, []);
 
   const handlePrevMonth = () => {
     if (currentMonth === 0) {
@@ -530,11 +545,7 @@ export function HomePage() {
   };
 
   const handleDateClick = (day: number) => {
-    setSelectedDate({
-      year: currentYear,
-      month: currentMonth,
-      day: day,
-    });
+    updateCalendarDate(new Date(currentYear, currentMonth, day));
   };
 
   const isToday = (day: number) => {
@@ -553,8 +564,11 @@ export function HomePage() {
     );
   };
 
-  const hasProblem = (day: number) => {
-    return monthProblems.some(p => p.day === day);
+  const hasPost = (day: number) => {
+    return monthPosts.some(post => {
+      const postDate = new Date(post.postDate);
+      return postDate.getDate() === day;
+    });
   };
 
   const difficultyColors = {
@@ -569,17 +583,29 @@ export function HomePage() {
     Update: 'bg-green-500/20 text-green-400 border-green-500/30',
   };
 
-  // Random motivational quote
-  const motivationalQuote =
+  // Get motivational quote from selected post or fallback
+  const motivationalQuote = selectedPost?.motivationalQuote || 
     MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)];
 
-  const formatDate = (year: number, month: number, day: number) => {
-    return `${MONTHS[month]} ${day}, ${year}`;
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return format(date, 'MMMM d, yyyy');
   };
 
-  const formatShortDate = (year: number, month: number, day: number) => {
-    return `${MONTHS[month].slice(0, 3)} ${day}`;
+  const formatShortDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return format(date, 'MMM d');
   };
+
+  if (loading) {
+    return (
+      <div className="h-full overflow-auto flex items-center justify-center">
+        <div className={`${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+          Loading posts...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full overflow-auto">
@@ -606,112 +632,128 @@ export function HomePage() {
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Left Column - Today's Problem & Monthly List */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Selected Problem Card */}
-            <Card
-              className={`p-6 rounded-2xl ${
-                theme === 'dark'
-                  ? 'bg-gradient-to-br from-slate-900/50 to-purple-900/30 border-purple-500/30'
-                  : 'bg-gradient-to-br from-slate-50 to-purple-50 border-purple-200'
-              }`}
-            >
-              <div className="space-y-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p
-                      className={`mb-2 ${
-                        theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
-                      }`}
-                    >
-                      {formatDate(
-                        selectedProblem.year,
-                        selectedProblem.month,
-                        selectedProblem.day
-                      )}
-                    </p>
-                    <h2
-                      className={`mb-2 ${
-                        theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
-                      }`}
-                    >
-                      {isToday(selectedProblem.day) &&
-                      selectedProblem.month === today.getMonth() &&
-                      selectedProblem.year === today.getFullYear()
-                        ? "Today's LeetCode Problem"
-                        : 'Selected LeetCode Problem'}
-                    </h2>
-                    <h3
-                      className={
-                        theme === 'dark' ? 'text-purple-400' : 'text-purple-600'
-                      }
-                    >
-                      {selectedProblem.title}
-                    </h3>
+            {/* Selected Post Card */}
+            {selectedPost ? (
+              <Card
+                className={`p-6 rounded-2xl ${
+                  theme === 'dark'
+                    ? 'bg-gradient-to-br from-slate-900/50 to-purple-900/30 border-purple-500/30'
+                    : 'bg-gradient-to-br from-slate-50 to-purple-50 border-purple-200'
+                }`}
+              >
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p
+                        className={`mb-2 ${
+                          theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+                        }`}
+                      >
+                        {formatDate(selectedPost.postDate)}
+                      </p>
+                      <div className="flex items-center gap-3 mb-3">
+                        <h2
+                          className={`${
+                            theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
+                          }`}
+                        >
+                          {new Date(selectedPost.postDate).toDateString() === today.toDateString()
+                            ? "Today's LeetCode Problem"
+                            : 'Selected LeetCode Problem'}
+                        </h2>
+                        <Badge
+                          className={difficultyColors[selectedPost.difficulty]}
+                        >
+                          {selectedPost.difficulty}
+                        </Badge>
+                      </div>
+                      <h3
+                        className={`text-xl font-semibold ${
+                          theme === 'dark' ? 'text-purple-400' : 'text-purple-600'
+                        }`}
+                      >
+                        {selectedPost.problemName}
+                      </h3>
+                    </div>
                   </div>
-                  <Badge
-                    className={difficultyColors[selectedProblem.difficulty]}
-                  >
-                    {selectedProblem.difficulty}
-                  </Badge>
-                </div>
 
-                <p
-                  className={`leading-relaxed ${
-                    theme === 'dark' ? 'text-slate-300' : 'text-slate-700'
-                  }`}
-                >
-                  {selectedProblem.description}
-                </p>
+                  {/* Thumbnail */}
+                  {selectedPost.thumbnailUrl && (
+                    <div className="w-full rounded-lg overflow-hidden border border-slate-700">
+                      <ImageWithFallback
+                        src={selectedPost.thumbnailUrl}
+                        alt={selectedPost.problemName}
+                        className="w-full h-auto object-contain"
+                        style={{ aspectRatio: '16/9' }}
+                      />
+                    </div>
+                  )}
 
-                {/* Tags */}
-                <div className="flex flex-wrap gap-2">
-                  {selectedProblem.tags.map(tag => (
-                    <Badge
-                      key={tag}
-                      className={`border ${
-                        theme === 'dark'
-                          ? 'bg-slate-800 text-slate-300 border-slate-700'
-                          : 'bg-slate-100 text-slate-700 border-slate-300'
-                      }`}
+                  {/* Tags */}
+                  {selectedPost.tags && selectedPost.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedPost.tags.map((tag: string) => (
+                        <Badge
+                          key={tag}
+                          className={`border ${
+                            theme === 'dark'
+                              ? 'bg-slate-800 text-slate-300 border-slate-700'
+                              : 'bg-slate-100 text-slate-700 border-slate-300'
+                          }`}
+                        >
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Links */}
+                  <div className="flex flex-wrap gap-3 pt-4">
+                    <a
+                      href={selectedPost.youtubeLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors"
                     >
-                      {tag}
-                    </Badge>
-                  ))}
+                      <Youtube className="w-4 h-4" />
+                      Watch Solution
+                    </a>
+                    <a
+                      href={selectedPost.leetcodeLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-lg transition-colors border border-slate-700"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      LeetCode
+                    </a>
+                    <a
+                      href={selectedPost.githubLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-lg transition-colors border border-slate-700"
+                    >
+                      <Github className="w-4 h-4" />
+                      Code
+                    </a>
+                  </div>
                 </div>
+              </Card>
+            ) : (
+              <Card
+                className={`p-6 rounded-2xl ${
+                  theme === 'dark'
+                    ? 'bg-gradient-to-br from-slate-900/50 to-purple-900/30 border-purple-500/30'
+                    : 'bg-gradient-to-br from-slate-50 to-purple-50 border-purple-200'
+                }`}
+              >
+                <p className={theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>
+                  No post available for the selected date.
+                </p>
+              </Card>
+            )}
 
-                {/* Links */}
-                <div className="flex flex-wrap gap-3 pt-4">
-                  <a
-                    href={selectedProblem.youtubeLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors"
-                  >
-                    <Youtube className="w-4 h-4" />
-                    Watch Solution
-                  </a>
-                  <a
-                    href={selectedProblem.leetcodeLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-lg transition-colors border border-slate-700"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    LeetCode
-                  </a>
-                  <a
-                    href={selectedProblem.githubLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-lg transition-colors border border-slate-700"
-                  >
-                    <Github className="w-4 h-4" />
-                    Code
-                  </a>
-                </div>
-              </div>
-            </Card>
-
-            {/* Monthly Problems List - Reconfigured based on selected date */}
+            {/* Recent Posts List */}
             <Card
               className={`p-6 rounded-2xl ${
                 theme === 'dark'
@@ -727,35 +769,23 @@ export function HomePage() {
                 Recent Problems
               </h3>
               <div className="space-y-3">
-                {reconfiguredProblems.map((problem, index) => {
-                  const problemDate = new Date(
-                    problem.year,
-                    problem.month,
-                    problem.day
-                  );
-                  const isSelectedProblem =
-                    problem.year === selectedDate.year &&
-                    problem.month === selectedDate.month &&
-                    problem.day === selectedDate.day;
+                {recentPosts.length > 0 ? (
+                  recentPosts.map((post, index) => {
+                    const postDate = new Date(post.postDate);
+                    const isSelectedPost = selectedPost?.id === post.id;
 
-                  return (
-                    <button
-                      key={`${problem.year}-${problem.month}-${problem.day}`}
-                      onClick={() =>
-                        setSelectedDate({
-                          year: problem.year,
-                          month: problem.month,
-                          day: problem.day,
-                        })
-                      }
-                      className={`w-full flex items-center gap-4 p-4 rounded-lg transition-all border ${
-                        isSelectedProblem
-                          ? 'bg-purple-500/20 border-purple-500/50'
-                          : theme === 'dark'
-                          ? 'bg-slate-900/50 border-slate-800 hover:border-slate-700'
-                          : 'bg-white border-slate-200 hover:border-slate-300'
-                      }`}
-                    >
+                    return (
+                      <button
+                        key={post.id}
+                    onClick={() => updateCalendarDate(postDate)}
+                        className={`w-full flex items-center gap-4 p-4 rounded-lg transition-all border ${
+                          isSelectedPost
+                            ? 'bg-purple-500/20 border-purple-500/50'
+                            : theme === 'dark'
+                            ? 'bg-slate-900/50 border-slate-800 hover:border-slate-700'
+                            : 'bg-white border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
                       <div
                         className={`flex items-center justify-center w-8 h-8 rounded ${
                           theme === 'dark'
@@ -763,67 +793,68 @@ export function HomePage() {
                             : 'bg-slate-100 text-slate-700'
                         }`}
                       >
-                        {index + 1}
+                        {postDate.getDate()}
                       </div>
-                      <div className="flex-1 text-left">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={
-                              theme === 'dark'
-                                ? 'text-slate-300'
-                                : 'text-slate-700'
-                            }
-                          >
-                            {problem.title}
-                          </span>
+                        <div className="flex-1 text-left">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={
+                                theme === 'dark'
+                                  ? 'text-slate-300'
+                                  : 'text-slate-700'
+                              }
+                            >
+                              {post.problemName}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span
+                              className={
+                                theme === 'dark'
+                                  ? 'text-slate-500'
+                                  : 'text-slate-600'
+                              }
+                            >
+                              {formatShortDate(post.postDate)}
+                            </span>
+                            <span
+                              className={`text-sm ${
+                                post.difficulty === 'Easy'
+                                  ? 'text-green-400'
+                                  : post.difficulty === 'Medium'
+                                  ? 'text-amber-400'
+                                  : 'text-red-400'
+                              }`}
+                            >
+                              {post.difficulty}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span
-                            className={
-                              theme === 'dark'
-                                ? 'text-slate-500'
-                                : 'text-slate-600'
-                            }
-                          >
-                            {formatShortDate(
-                              problem.year,
-                              problem.month,
-                              problem.day
-                            )}
-                          </span>
-                          <span
-                            className={`text-sm ${
-                              problem.difficulty === 'Easy'
-                                ? 'text-green-400'
-                                : problem.difficulty === 'Medium'
-                                ? 'text-amber-400'
-                                : 'text-red-400'
-                            }`}
-                          >
-                            {problem.difficulty}
-                          </span>
-                        </div>
-                      </div>
-                      <div
-                        className={
-                          theme === 'dark' ? 'text-slate-600' : 'text-slate-500'
-                        }
-                      >
-                        <svg
-                          className="w-5 h-5"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
+                        <div
+                          className={
+                            theme === 'dark' ? 'text-slate-600' : 'text-slate-500'
+                          }
                         >
-                          <path
-                            fillRule="evenodd"
-                            d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </div>
-                    </button>
-                  );
-                })}
+                          <svg
+                            className="w-5 h-5"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </div>
+                      </button>
+                    );
+                  })
+                ) : (
+                  <p className={theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>
+                    No recent posts available.
+                  </p>
+                )}
               </div>
             </Card>
           </div>
@@ -967,7 +998,7 @@ export function HomePage() {
                     day => {
                       const todayCheck = isToday(day);
                       const selectedCheck = isSelected(day);
-                      const problemCheck = hasProblem(day);
+                      const postCheck = hasPost(day);
 
                       return (
                         <button
@@ -982,7 +1013,7 @@ export function HomePage() {
                                 }`
                               : selectedCheck
                               ? 'bg-purple-500/30 border border-purple-500'
-                              : problemCheck
+                              : postCheck
                               ? theme === 'dark'
                                 ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                                 : 'bg-slate-200 text-slate-700 hover:bg-slate-300'

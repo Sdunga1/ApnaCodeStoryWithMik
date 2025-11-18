@@ -1,12 +1,19 @@
-import { useState } from 'react';
+import { useState, ChangeEvent } from 'react';
 import { Card } from './ui/card';
-import { Button } from './ui/button';
+import { Button, buttonVariants } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Separator } from './ui/separator';
-import { Plus, X } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
+import { Calendar } from './ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Plus, X, CalendarIcon } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import { format } from 'date-fns';
+import { getStoredToken } from '../lib/api';
+import { cn } from './ui/utils';
+import { ImageWithFallback } from './figma/ImageWithFallback';
 
 const DEFAULT_TAGS = [
   'Array',
@@ -31,6 +38,10 @@ export function CreatePostPage() {
   const { theme } = useTheme();
   const [motivationalQuote, setMotivationalQuote] = useState('');
   const [problemName, setProblemName] = useState('');
+  const [difficulty, setDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>('Medium');
+  const [postDate, setPostDate] = useState<Date>(new Date());
+  const [thumbnailUrl, setThumbnailUrl] = useState('');
+  const [thumbnailFileName, setThumbnailFileName] = useState('');
   const [youtubeLink, setYoutubeLink] = useState('');
   const [leetcodeLink, setLeetcodeLink] = useState('');
   const [githubLink, setGithubLink] = useState('');
@@ -40,6 +51,40 @@ export function CreatePostPage() {
   const [optionalLinks, setOptionalLinks] = useState<{ label: string; url: string }[]>([]);
   const [newLinkLabel, setNewLinkLabel] = useState('');
   const [newLinkUrl, setNewLinkUrl] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+
+  const MAX_THUMBNAIL_SIZE = 1.5 * 1024 * 1024; // ~1.5MB
+
+  const handleThumbnailUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload a valid image file (PNG, JPG, JPEG).');
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size > MAX_THUMBNAIL_SIZE) {
+      alert('Thumbnail is too large. Please keep it under 1.5MB.');
+      event.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      setThumbnailUrl(result);
+      setThumbnailFileName(file.name);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleClearThumbnailUpload = () => {
+    setThumbnailFileName('');
+    setThumbnailUrl('');
+  };
 
   const handleTagClick = (tag: string) => {
     setSelectedTags(prev =>
@@ -69,20 +114,64 @@ export function CreatePostPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const postData = {
-      motivationalQuote,
-      problemName,
-      youtubeLink,
-      leetcodeLink,
-      githubLink,
-      tags: selectedTags,
-      optionalLinks,
-      createdAt: new Date().toISOString()
-    };
-    console.log('Post created:', postData);
-    alert('Post published successfully!');
+    setIsSubmitting(true);
+
+    try {
+      const postData = {
+        motivationalQuote,
+        problemName,
+        difficulty,
+        postDate: format(postDate, 'yyyy-MM-dd'),
+        thumbnailUrl,
+        youtubeLink,
+        leetcodeLink,
+        githubLink,
+        tags: selectedTags,
+        optionalLinks,
+      };
+
+      const token = getStoredToken();
+      if (!token) {
+        throw new Error('You must be logged in to create posts');
+      }
+
+      const response = await fetch('/api/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(postData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create post');
+      }
+
+      alert('Post published successfully!');
+      
+      // Reset form
+      setMotivationalQuote('');
+      setProblemName('');
+      setDifficulty('Medium');
+      setPostDate(new Date());
+      setThumbnailUrl('');
+      setThumbnailFileName('');
+      setYoutubeLink('');
+      setLeetcodeLink('');
+      setGithubLink('');
+      setSelectedTags([]);
+      setOptionalLinks([]);
+    } catch (error: any) {
+      console.error('Error creating post:', error);
+      alert(error.message || 'Failed to create post. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -144,6 +233,224 @@ export function CreatePostPage() {
                     : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400'
                 } focus:border-purple-500 focus:ring-purple-500/20`}
               />
+            </div>
+
+            <Separator className={theme === 'dark' ? 'bg-slate-700/50' : 'bg-slate-300'} />
+
+            {/* Difficulty */}
+            <div>
+              <Label className={`mb-3 block ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
+                Difficulty Level
+              </Label>
+              <RadioGroup
+                value={difficulty}
+                onValueChange={(value) => setDifficulty(value as 'Easy' | 'Medium' | 'Hard')}
+                className="flex gap-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Easy" id="easy" />
+                  <Label
+                    htmlFor="easy"
+                    className={`cursor-pointer ${
+                      difficulty === 'Easy'
+                        ? 'text-green-400 font-semibold'
+                        : theme === 'dark'
+                        ? 'text-slate-300'
+                        : 'text-slate-700'
+                    }`}
+                  >
+                    Easy
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Medium" id="medium" />
+                  <Label
+                    htmlFor="medium"
+                    className={`cursor-pointer ${
+                      difficulty === 'Medium'
+                        ? 'text-amber-400 font-semibold'
+                        : theme === 'dark'
+                        ? 'text-slate-300'
+                        : 'text-slate-700'
+                    }`}
+                  >
+                    Medium
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Hard" id="hard" />
+                  <Label
+                    htmlFor="hard"
+                    className={`cursor-pointer ${
+                      difficulty === 'Hard'
+                        ? 'text-red-400 font-semibold'
+                        : theme === 'dark'
+                        ? 'text-slate-300'
+                        : 'text-slate-700'
+                    }`}
+                  >
+                    Hard
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <Separator className={theme === 'dark' ? 'bg-slate-700/50' : 'bg-slate-300'} />
+
+            {/* Post Date */}
+            <div>
+              <Label className={`mb-2 block ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
+                Post Date
+              </Label>
+              <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={`w-full justify-start text-left font-normal h-11 ${
+                      theme === 'dark'
+                        ? 'bg-slate-800/50 border-slate-700 text-slate-100 hover:bg-slate-700/50'
+                        : 'bg-white border-slate-300 text-slate-900 hover:bg-slate-50'
+                    }`}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {postDate ? format(postDate, 'PPP') : 'Pick a date'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className={`w-auto p-3 ${
+                    theme === 'dark'
+                      ? 'bg-slate-800 border-slate-700'
+                      : 'bg-white border-slate-300'
+                  }`}
+                  align="start"
+                >
+                  <Calendar
+                    mode="single"
+                    selected={postDate}
+                    onSelect={(date) => {
+                      if (date) {
+                        setPostDate(date);
+                        setIsDatePickerOpen(false);
+                      }
+                    }}
+                    initialFocus
+                    classNames={{
+                      months: "flex flex-col sm:flex-row gap-2",
+                      month: "flex flex-col gap-4",
+                      caption: "flex justify-center pt-1 relative items-center w-full",
+                      caption_label: `text-sm font-medium ${
+                        theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
+                      }`,
+                      nav: "flex items-center gap-1",
+                      nav_button: cn(
+                        buttonVariants({ variant: "outline" }),
+                        `size-7 p-0 ${
+                          theme === 'dark'
+                            ? 'bg-slate-800/50 border-slate-700 text-slate-300 hover:bg-slate-700'
+                            : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'
+                        }`
+                      ),
+                      nav_button_previous: "absolute left-1",
+                      nav_button_next: "absolute right-1",
+                      table: "w-full border-collapse",
+                      head_row: "flex",
+                      head_cell: `text-center p-1 text-sm font-normal ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+                      }`,
+                      row: "flex w-full mt-2",
+                      cell: "relative p-0 text-center text-sm",
+                      day: cn(
+                        `size-8 p-0 font-normal rounded-md transition-colors ${
+                          theme === 'dark'
+                            ? 'text-slate-300 hover:bg-slate-700'
+                            : 'text-slate-700 hover:bg-slate-100'
+                        }`
+                      ),
+                      day_selected: `bg-purple-600 text-white hover:bg-purple-700 ${
+                        theme === 'dark' ? 'hover:bg-purple-700' : 'hover:bg-purple-700'
+                      }`,
+                      day_today: `bg-purple-500/20 border border-purple-500 ${
+                        theme === 'dark' ? 'text-purple-300' : 'text-purple-700'
+                      }`,
+                      day_outside: `${
+                        theme === 'dark' ? 'text-slate-600 opacity-50' : 'text-slate-400 opacity-50'
+                      }`,
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <Separator className={theme === 'dark' ? 'bg-slate-700/50' : 'bg-slate-300'} />
+
+            {/* Thumbnail */}
+            <div>
+              <Label htmlFor="thumbnailUrl" className={`mb-2 block ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
+                Thumbnail
+              </Label>
+              <Input
+                id="thumbnailUrl"
+                type="url"
+                placeholder="https://i.ytimg.com/vi/..."
+                value={thumbnailUrl}
+                onChange={(e) => setThumbnailUrl(e.target.value)}
+                required
+                className={`h-11 ${
+                  theme === 'dark'
+                    ? 'bg-slate-800/50 border-slate-700 text-slate-100 placeholder:text-slate-500'
+                    : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400'
+                } focus:border-purple-500 focus:ring-purple-500/20`}
+              />
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <input
+                  id="thumbnailUpload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleThumbnailUpload}
+                />
+                <label
+                  htmlFor="thumbnailUpload"
+                  className={`inline-flex items-center px-4 py-2 rounded-md cursor-pointer text-sm font-medium ${
+                    theme === 'dark'
+                      ? 'bg-slate-800/60 text-slate-100 hover:bg-slate-700/80 border border-slate-700'
+                      : 'bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-300'
+                  }`}
+                >
+                  Upload Image
+                </label>
+                {thumbnailFileName && (
+                  <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
+                    {thumbnailFileName}
+                  </span>
+                )}
+                {thumbnailUrl && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearThumbnailUpload}
+                    className={`text-sm ${
+                      theme === 'dark' ? 'text-slate-300 hover:text-red-300' : 'text-slate-600 hover:text-red-600'
+                    }`}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+              <p className={`mt-2 text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                Paste an image URL or upload a thumbnail (PNG/JPG, &lt; 1.5MB).
+              </p>
+              {thumbnailUrl && (
+                <div className="mt-3">
+                  <ImageWithFallback
+                    src={thumbnailUrl}
+                    alt="Thumbnail preview"
+                    className="max-w-full h-auto rounded-lg border border-slate-700 max-h-48 object-contain"
+                  />
+                </div>
+              )}
             </div>
 
             <Separator className={theme === 'dark' ? 'bg-slate-700/50' : 'bg-slate-300'} />
@@ -372,9 +679,10 @@ export function CreatePostPage() {
               </Button>
               <Button
                 type="submit"
-                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-8"
+                disabled={isSubmitting}
+                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-8 disabled:opacity-50"
               >
-                Publish Post
+                {isSubmitting ? 'Publishing...' : 'Publish Post'}
               </Button>
             </div>
           </form>
