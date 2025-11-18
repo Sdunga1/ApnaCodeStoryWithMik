@@ -12,6 +12,7 @@ import {
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 import {
   Select,
   SelectContent,
@@ -22,7 +23,7 @@ import {
 import { format } from 'date-fns';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 
-interface Post {
+export interface Post {
   id: string;
   problemName: string;
   difficulty: 'Easy' | 'Medium' | 'Hard';
@@ -33,7 +34,7 @@ interface Post {
   githubLink: string;
   motivationalQuote: string | null;
   tags: string[];
-  extraLinks: Record<string, string>;
+  extraLinks: { label: string; url: string }[];
   createdAt: string;
 }
 
@@ -444,8 +445,32 @@ const MONTHS = [
   'December',
 ];
 
-export function HomePage() {
+interface HomePageProps {
+  onEditPost?: (post: Post) => void;
+}
+
+const toLocalDate = (value?: string | Date | null): Date => {
+  if (!value) return new Date();
+  if (value instanceof Date) return isNaN(value.getTime()) ? new Date() : value;
+
+  const parsed = new Date(value);
+  if (!isNaN(parsed.getTime())) {
+    return parsed;
+  }
+
+  const parts = value.split('-').map(part => parseInt(part, 10));
+  if (parts.length >= 3 && parts.every(num => !isNaN(num))) {
+    const [year, month, day] = parts;
+    return new Date(year, (month || 1) - 1, day || 1);
+  }
+
+  return new Date();
+};
+
+export function HomePage({ onEditPost }: HomePageProps = {}) {
   const { theme } = useTheme();
+  const { user, isAuthenticated } = useAuth();
+  const canEditPosts = isAuthenticated && user?.role === 'creator';
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
@@ -483,14 +508,19 @@ export function HomePage() {
 
   // Get posts for the current viewing month
   const monthPosts = useMemo(() => {
-    return posts.filter(post => {
-      const postDate = new Date(post.postDate);
-      return postDate.getFullYear() === currentYear && postDate.getMonth() === currentMonth;
-    }).sort((a, b) => {
-      const dateA = new Date(a.postDate);
-      const dateB = new Date(b.postDate);
-      return dateB.getTime() - dateA.getTime();
-    });
+    return posts
+      .filter(post => {
+        const postDate = toLocalDate(post.postDate);
+        return (
+          postDate.getFullYear() === currentYear &&
+          postDate.getMonth() === currentMonth
+        );
+      })
+      .sort((a, b) => {
+        const dateA = toLocalDate(a.postDate);
+        const dateB = toLocalDate(b.postDate);
+        return dateB.getTime() - dateA.getTime();
+      });
   }, [posts, currentYear, currentMonth]);
 
   // Get the selected post
@@ -502,10 +532,12 @@ export function HomePage() {
 
     return (
       posts.find(
-        p => format(new Date(p.postDate), 'yyyy-MM-dd') === selectedDateStr
+        p => format(toLocalDate(p.postDate), 'yyyy-MM-dd') === selectedDateStr
       ) ||
       posts.find(
-        p => format(new Date(p.postDate), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')
+        p =>
+          format(toLocalDate(p.postDate), 'yyyy-MM-dd') ===
+          format(today, 'yyyy-MM-dd')
       ) ||
       posts[0]
     );
@@ -525,6 +557,34 @@ export function HomePage() {
       day: date.getDate(),
     });
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const focusPayload = sessionStorage.getItem('post_focus_date');
+    if (focusPayload) {
+      sessionStorage.removeItem('post_focus_date');
+      try {
+        const parsed = JSON.parse(focusPayload) as {
+          year: number;
+          month: number;
+          day: number;
+        };
+        if (
+          parsed &&
+          typeof parsed.year === 'number' &&
+          typeof parsed.month === 'number' &&
+          typeof parsed.day === 'number'
+        ) {
+          const target = new Date(parsed.year, parsed.month, parsed.day);
+          if (!Number.isNaN(target.getTime())) {
+            updateCalendarDate(target);
+          }
+        }
+      } catch {
+        // ignore malformed payload
+      }
+    }
+  }, [updateCalendarDate, posts.length]);
 
   const handlePrevMonth = () => {
     if (currentMonth === 0) {
@@ -566,7 +626,7 @@ export function HomePage() {
 
   const hasPost = (day: number) => {
     return monthPosts.some(post => {
-      const postDate = new Date(post.postDate);
+      const postDate = toLocalDate(post.postDate);
       return postDate.getDate() === day;
     });
   };
@@ -584,23 +644,28 @@ export function HomePage() {
   };
 
   // Get motivational quote from selected post or fallback
-  const motivationalQuote = selectedPost?.motivationalQuote || 
+  const motivationalQuote =
+    selectedPost?.motivationalQuote ||
     MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)];
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
+    const date = toLocalDate(dateStr);
     return format(date, 'MMMM d, yyyy');
   };
 
   const formatShortDate = (dateStr: string) => {
-    const date = new Date(dateStr);
+    const date = toLocalDate(dateStr);
     return format(date, 'MMM d');
   };
 
   if (loading) {
     return (
       <div className="h-full overflow-auto flex items-center justify-center">
-        <div className={`${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+        <div
+          className={`${
+            theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+          }`}
+        >
           Loading posts...
         </div>
       </div>
@@ -642,7 +707,7 @@ export function HomePage() {
                 }`}
               >
                 <div className="space-y-4">
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <p
                         className={`mb-2 ${
@@ -651,29 +716,44 @@ export function HomePage() {
                       >
                         {formatDate(selectedPost.postDate)}
                       </p>
-                      <div className="flex items-center gap-3 mb-3">
-                        <h2
-                          className={`${
-                            theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
-                          }`}
-                        >
-                          {new Date(selectedPost.postDate).toDateString() === today.toDateString()
-                            ? "Today's LeetCode Problem"
-                            : 'Selected LeetCode Problem'}
-                        </h2>
-                        <Badge
-                          className={difficultyColors[selectedPost.difficulty]}
-                        >
-                          {selectedPost.difficulty}
-                        </Badge>
-                      </div>
+                      <h2
+                        className={`mb-1 ${
+                          theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
+                        }`}
+                      >
+                        {toLocalDate(selectedPost.postDate).toDateString() ===
+                        today.toDateString()
+                          ? "Today's LeetCode Problem"
+                          : 'Selected LeetCode Problem'}
+                      </h2>
                       <h3
                         className={`text-xl font-semibold ${
-                          theme === 'dark' ? 'text-purple-400' : 'text-purple-600'
+                          theme === 'dark'
+                            ? 'text-purple-400'
+                            : 'text-purple-600'
                         }`}
                       >
                         {selectedPost.problemName}
                       </h3>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <Badge
+                        className={difficultyColors[selectedPost.difficulty]}
+                      >
+                        {selectedPost.difficulty}
+                      </Badge>
+                      {canEditPosts && onEditPost && (
+                        <button
+                          onClick={() => onEditPost(selectedPost)}
+                          className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${
+                            theme === 'dark'
+                              ? 'bg-slate-900/60 border-slate-700 text-slate-100 hover:bg-slate-800'
+                              : 'bg-white border-slate-300 text-slate-800 hover:bg-slate-100'
+                          }`}
+                        >
+                          Edit Post
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -747,7 +827,11 @@ export function HomePage() {
                     : 'bg-gradient-to-br from-slate-50 to-purple-50 border-purple-200'
                 }`}
               >
-                <p className={theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>
+                <p
+                  className={
+                    theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+                  }
+                >
                   No post available for the selected date.
                 </p>
               </Card>
@@ -771,13 +855,13 @@ export function HomePage() {
               <div className="space-y-3">
                 {recentPosts.length > 0 ? (
                   recentPosts.map((post, index) => {
-                    const postDate = new Date(post.postDate);
+                    const postDate = toLocalDate(post.postDate);
                     const isSelectedPost = selectedPost?.id === post.id;
 
                     return (
                       <button
                         key={post.id}
-                    onClick={() => updateCalendarDate(postDate)}
+                        onClick={() => updateCalendarDate(postDate)}
                         className={`w-full flex items-center gap-4 p-4 rounded-lg transition-all border ${
                           isSelectedPost
                             ? 'bg-purple-500/20 border-purple-500/50'
@@ -786,15 +870,15 @@ export function HomePage() {
                             : 'bg-white border-slate-200 hover:border-slate-300'
                         }`}
                       >
-                      <div
-                        className={`flex items-center justify-center w-8 h-8 rounded ${
-                          theme === 'dark'
-                            ? 'bg-slate-800 text-slate-300'
-                            : 'bg-slate-100 text-slate-700'
-                        }`}
-                      >
-                        {postDate.getDate()}
-                      </div>
+                        <div
+                          className={`flex items-center justify-center w-8 h-8 rounded ${
+                            theme === 'dark'
+                              ? 'bg-slate-800 text-slate-300'
+                              : 'bg-slate-100 text-slate-700'
+                          }`}
+                        >
+                          {postDate.getDate()}
+                        </div>
                         <div className="flex-1 text-left">
                           <div className="flex items-center gap-2">
                             <span
@@ -832,7 +916,9 @@ export function HomePage() {
                         </div>
                         <div
                           className={
-                            theme === 'dark' ? 'text-slate-600' : 'text-slate-500'
+                            theme === 'dark'
+                              ? 'text-slate-600'
+                              : 'text-slate-500'
                           }
                         >
                           <svg
@@ -851,7 +937,11 @@ export function HomePage() {
                     );
                   })
                 ) : (
-                  <p className={theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>
+                  <p
+                    className={
+                      theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+                    }
+                  >
                     No recent posts available.
                   </p>
                 )}

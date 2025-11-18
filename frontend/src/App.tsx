@@ -1,7 +1,6 @@
-import React from 'react';
-import { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Sidebar } from './components/Sidebar';
-import { HomePage } from './components/HomePage';
+import { HomePage, type Post as DailyPost } from './components/HomePage';
 import { StatsCard } from './components/StatsCard';
 import { ProblemSection } from './components/ProblemSection';
 import { CreatePostPage } from './components/CreatePostPage';
@@ -443,6 +442,24 @@ export default function App() {
     0
   );
 
+  const handleEditPost = useCallback((post: DailyPost) => {
+    if (!post?.id) return;
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('post_edit_post_id', post.id);
+    }
+    setActiveView('create-post');
+  }, []);
+
+  const handlePostComplete = useCallback(
+    (date: { year: number; month: number; day: number }) => {
+      if (typeof window !== 'undefined' && date) {
+        sessionStorage.setItem('post_focus_date', JSON.stringify(date));
+      }
+      setActiveView('home');
+    },
+    []
+  );
+
   // Filter problems based on search
   const filteredSections = searchQuery
     ? problemSections
@@ -513,7 +530,7 @@ export default function App() {
                 )}
               </button>
             </div>
-            <HomePage />
+            <HomePage onEditPost={handleEditPost} />
           </>
         ) : activeView === 'create-post' ? (
           <>
@@ -534,7 +551,7 @@ export default function App() {
                 )}
               </button>
             </div>
-            <CreatePostPage />
+            <CreatePostPage onPostComplete={handlePostComplete} />
           </>
         ) : activeView === 'practice' ? (
           <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">

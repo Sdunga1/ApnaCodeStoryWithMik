@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Sidebar } from '@/components/Sidebar';
-import { HomePage } from '@/components/HomePage';
+import { HomePage, type Post as DailyPost } from '@/components/HomePage';
 import { ProfileContent } from '@/components/ProfileContent';
 import { CreatePostPage } from '@/components/CreatePostPage';
 import Header from '@/components/Header';
@@ -456,6 +456,24 @@ export default function Home() {
         .filter(section => section.problems.length > 0)
     : problemSections;
 
+  const handleEditPost = useCallback((post: DailyPost) => {
+    if (!post?.id) return;
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('post_edit_post_id', post.id);
+    }
+    setActiveView('create-post');
+  }, []);
+
+  const handlePostComplete = useCallback(
+    (date: { year: number; month: number; day: number }) => {
+      if (typeof window !== 'undefined' && date) {
+        sessionStorage.setItem('post_focus_date', JSON.stringify(date));
+      }
+      setActiveView('home');
+    },
+    []
+  );
+
   return (
     <div
       className={`flex h-screen text-slate-100 ${
@@ -494,11 +512,11 @@ export default function Home() {
         <Header onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} sidebarOpen={sidebarOpen} />
         <div className="pt-[220px] md:pt-[152px]">
           {activeView === 'home' ? (
-            <HomePage />
+            <HomePage onEditPost={handleEditPost} />
           ) : activeView === 'profile' ? (
             <ProfileContent />
           ) : activeView === 'create-post' ? (
-            <CreatePostPage />
+            <CreatePostPage onPostComplete={handlePostComplete} />
           ) : activeView === 'practice' ? (
           <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
 
