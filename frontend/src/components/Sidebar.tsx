@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Home, BookOpen, List, X, Sun, Moon } from 'lucide-react';
+import { Home, BookOpen, List, X, Sun, Moon, PlusCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Progress } from './ui/progress';
 import { useTheme } from '../contexts/ThemeContext';
@@ -32,12 +32,20 @@ export function Sidebar({
       ? user.email.split('@')[0]
       : 'dsa_learner';
   const showProgress = isAuthenticated && user?.role !== 'creator';
+  const isCreator = isAuthenticated && user?.role === 'creator';
 
-  const navItems = [
-    { icon: Home, label: 'Home', value: 'home' },
-    { icon: List, label: 'Practice Problems', value: 'practice' },
-    { icon: BookOpen, label: 'Courses / Roadmaps', value: 'courses' },
-  ];
+  // Dynamic nav items based on user role
+  const navItems = isCreator
+    ? [
+        { icon: Home, label: 'Home', value: 'home' },
+        { icon: PlusCircle, label: 'Create Post', value: 'create-post' },
+        { icon: List, label: 'Practice Problems', value: 'practice' },
+      ]
+    : [
+        { icon: Home, label: 'Home', value: 'home' },
+        { icon: List, label: 'Practice Problems', value: 'practice' },
+        { icon: BookOpen, label: 'Courses / Roadmaps', value: 'courses' },
+      ];
 
   return (
     <div

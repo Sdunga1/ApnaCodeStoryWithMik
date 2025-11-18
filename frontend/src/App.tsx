@@ -4,9 +4,11 @@ import { Sidebar } from './components/Sidebar';
 import { HomePage } from './components/HomePage';
 import { StatsCard } from './components/StatsCard';
 import { ProblemSection } from './components/ProblemSection';
+import { CreatePostPage } from './components/CreatePostPage';
 import { Search, Menu, X } from 'lucide-react';
 import { Input } from './components/ui/input';
 import { useTheme } from './contexts/ThemeContext';
+import { useAuth } from './contexts/AuthContext';
 
 interface Problem {
   id: number;
@@ -390,6 +392,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeView, setActiveView] = useState('home');
   const { theme } = useTheme();
+  const { user, isAuthenticated } = useAuth();
 
   // Calculate stats
   const totalProblems = problemSections.reduce(
@@ -487,6 +490,10 @@ export default function App() {
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
+        {(() => {
+          console.log('Current activeView:', activeView);
+          return null;
+        })()}
         {activeView === 'home' ? (
           <>
             {/* Mobile menu button */}
@@ -507,6 +514,27 @@ export default function App() {
               </button>
             </div>
             <HomePage />
+          </>
+        ) : activeView === 'create-post' ? (
+          <>
+            {/* Mobile menu button */}
+            <div className="lg:hidden p-4">
+              <button
+                className={`p-2 rounded-lg transition-colors ${
+                  theme === 'dark'
+                    ? 'bg-slate-900 hover:bg-slate-800'
+                    : 'bg-slate-100 hover:bg-slate-200'
+                }`}
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+              >
+                {sidebarOpen ? (
+                  <X className="w-6 h-6" />
+                ) : (
+                  <Menu className="w-6 h-6" />
+                )}
+              </button>
+            </div>
+            <CreatePostPage />
           </>
         ) : activeView === 'practice' ? (
           <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">

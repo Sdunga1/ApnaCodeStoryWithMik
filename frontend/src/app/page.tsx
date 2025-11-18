@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { HomePage } from '@/components/HomePage';
 import { ProfileContent } from '@/components/ProfileContent';
+import { CreatePostPage } from '@/components/CreatePostPage';
 import Header from '@/components/Header';
 import { StatsCard } from '@/components/StatsCard';
 import { ProblemSection } from '@/components/ProblemSection';
@@ -496,6 +497,8 @@ export default function Home() {
             <HomePage />
           ) : activeView === 'profile' ? (
             <ProfileContent />
+          ) : activeView === 'create-post' ? (
+            <CreatePostPage />
           ) : activeView === 'practice' ? (
           <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
 
