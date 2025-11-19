@@ -213,3 +213,55 @@ html {
 .light .hover\:text-slate-300:hover {
   color: rgb(51 65 85);
 }
+
+/* React Image Crop Styling */
+.ReactCrop {
+  position: relative;
+  display: inline-block;
+  cursor: crosshair;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.ReactCrop__crop-selection {
+  border: 2px solid rgba(168, 85, 247, 0.8);
+  box-shadow: 0 0 0 9999em rgba(0, 0, 0, 0.5);
+}
+
+.dark .ReactCrop__crop-selection {
+  border-color: rgba(168, 85, 247, 0.9);
+  box-shadow: 0 0 0 9999em rgba(0, 0, 0, 0.7);
+}
+
+.ReactCrop__drag-handle {
+  background-color: rgba(168, 85, 247, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  width: 12px;
+  height: 12px;
+}
+
+.dark .ReactCrop__drag-handle {
+  background-color: rgba(168, 85, 247, 1);
+  border-color: rgba(255, 255, 255, 0.9);
+}
+
+/* Calendar Dropdown Styling for Dark Theme */
+.dark .rdp-dropdown_month,
+.dark .rdp-dropdown_year {
+  background-color: rgb(30 41 59) !important;
+  border-color: rgb(51 65 85) !important;
+  color: rgb(241 245 249) !important;
+}
+
+.dark .rdp-dropdown_month option,
+.dark .rdp-dropdown_year option {
+  background-color: rgb(30 41 59);
+  color: rgb(241 245 249);
+}
+
+.dark .rdp-dropdown_month:focus,
+.dark .rdp-dropdown_year:focus {
+  border-color: rgb(168 85 247) !important;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
+}

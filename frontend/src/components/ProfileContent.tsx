@@ -22,6 +22,13 @@ import {
   CardDescription,
 } from './ui/card';
 import { toast } from 'sonner';
+import {
+  ImageCrop,
+  ImageCropApply,
+  ImageCropContent,
+  ImageCropReset,
+} from './ui/image-crop';
+import { XIcon } from 'lucide-react';
 
 interface FormState {
   name: string;
@@ -51,6 +58,8 @@ export function ProfileContent() {
   const [saving, setSaving] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [croppedImage, setCroppedImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -93,21 +102,79 @@ export function ProfileContent() {
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload a valid image file');
+      return;
+    }
     if (file.size > 1.5 * 1024 * 1024) {
       toast.error('Avatar must be smaller than 1.5MB');
       return;
     }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAvatarPreview(reader.result as string);
-      setAvatarDirty(true);
-    };
-    reader.readAsDataURL(file);
+    setSelectedFile(file);
+    setCroppedImage(null);
+  };
+
+  const handleCropComplete = (croppedImageData: string) => {
+    setCroppedImage(croppedImageData);
+    setAvatarPreview(croppedImageData);
+    setAvatarDirty(true);
+  };
+
+  const handleResetCrop = () => {
+    setSelectedFile(null);
+    setCroppedImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleChooseDifferent = () => {
+    setSelectedFile(null);
+    setCroppedImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleSaveCroppedAvatar = async () => {
+    if (!croppedImage || !initialData) return;
+    
+    setSaving(true);
+    try {
+      const payload: ProfileUpdatePayload = {
+        avatarData: croppedImage,
+      };
+      const updated = await updateProfile(payload);
+      setInitialData(updated);
+      setAvatarPreview(updated.avatarUrl ?? null);
+      setAvatarDirty(false);
+      setSelectedFile(null);
+      setCroppedImage(null);
+      await refreshUser();
+      toast.success('Avatar updated successfully');
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to update avatar');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRemoveCroppedAvatar = () => {
+    setSelectedFile(null);
+    setCroppedImage(null);
+    setAvatarPreview(null);
+    setAvatarDirty(true);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const removeAvatar = () => {
     setAvatarPreview(null);
     setAvatarDirty(true);
+    setSelectedFile(null);
+    setCroppedImage(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -240,56 +307,130 @@ export function ProfileContent() {
               <CardHeader>
                 <CardTitle>Avatar</CardTitle>
                 <CardDescription>
-                  Upload a square image for best results (max 1.5MB).
+                  Upload an image and crop it to fit (max 1.5MB).
                 </CardDescription>
               </CardHeader>
-              <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                <Avatar className="h-24 w-24 bg-gradient-to-br from-purple-500 to-violet-700">
-                  {avatarPreview ? (
-                    <AvatarImage
-                      src={avatarPreview}
-                      alt={form.name || user?.name || 'User avatar'}
-                    />
-                  ) : (
-                    <AvatarFallback className="text-lg text-white">
-                      {(form.name || user?.name || 'U')
-                        .split(' ')
-                        .map(part => part[0])
-                        .join('')
-                        .slice(0, 2)
-                        .toUpperCase()}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-                <div className="flex flex-col gap-2">
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="border-purple-500/40 text-purple-200 hover:bg-purple-500/10"
-                    >
-                      Upload new
-                    </Button>
-                    {avatarPreview && (
+              <CardContent className="flex flex-col gap-4">
+                {!selectedFile && !croppedImage && (
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                    <Avatar className="h-24 w-24 bg-gradient-to-br from-purple-500 to-violet-700">
+                      {avatarPreview ? (
+                        <AvatarImage
+                          src={avatarPreview}
+                          alt={form.name || user?.name || 'User avatar'}
+                        />
+                      ) : (
+                        <AvatarFallback className="text-lg text-white">
+                          {(form.name || user?.name || 'U')
+                            .split(' ')
+                            .map(part => part[0])
+                            .join('')
+                            .slice(0, 2)
+                            .toUpperCase()}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="border-purple-500/40 text-purple-200 hover:bg-purple-500/10"
+                        >
+                          Upload new
+                        </Button>
+                        {avatarPreview && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={removeAvatar}
+                            className="text-slate-400 hover:text-red-400"
+                          >
+                            Remove
+                          </Button>
+                        )}
+                      </div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleAvatarChange}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {selectedFile && !croppedImage && (
+                  <ImageCrop
+                    aspect={1}
+                    circularCrop
+                    file={selectedFile}
+                    maxImageSize={1.5 * 1024 * 1024}
+                    onCrop={handleCropComplete}
+                  >
+                    <ImageCropContent className="max-w-md mx-auto" />
+                    <div className="flex items-center gap-2 justify-center">
+                      <ImageCropApply />
+                      <ImageCropReset />
+                      <Button
+                        onClick={handleResetCrop}
+                        type="button"
+                        variant="ghost"
+                        className="text-slate-400 hover:text-red-400"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </ImageCrop>
+                )}
+
+                {croppedImage && (
+                  <div className="space-y-4">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                      <Avatar className="h-24 w-24 bg-gradient-to-br from-purple-500 to-violet-700">
+                        <AvatarImage
+                          src={croppedImage}
+                          alt="Cropped avatar preview"
+                        />
+                      </Avatar>
+                      <div className="flex flex-col gap-2">
+                        <p className="text-sm text-slate-400">
+                          Cropped image ready. Save changes to update your profile.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleChooseDifferent}
+                        disabled={saving}
+                        className="border-purple-500/40 text-purple-200 hover:bg-purple-500/10"
+                      >
+                        Choose different
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleSaveCroppedAvatar}
+                        disabled={saving}
+                        className="bg-purple-600 hover:bg-purple-700 text-white"
+                      >
+                        {saving ? 'Saving...' : 'Save'}
+                      </Button>
                       <Button
                         type="button"
                         variant="ghost"
-                        onClick={removeAvatar}
+                        onClick={handleRemoveCroppedAvatar}
+                        disabled={saving}
                         className="text-slate-400 hover:text-red-400"
                       >
                         Remove
                       </Button>
-                    )}
+                    </div>
                   </div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleAvatarChange}
-                  />
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>

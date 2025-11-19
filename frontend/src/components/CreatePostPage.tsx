@@ -82,6 +82,9 @@ export function CreatePostPage({ onPostComplete }: CreatePostPageProps = {}) {
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [isLoadingExistingPost, setIsLoadingExistingPost] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [isTagEditMode, setIsTagEditMode] = useState(false);
+  const [editingTagIndex, setEditingTagIndex] = useState<number | null>(null);
+  const [editingTagValue, setEditingTagValue] = useState('');
 
   const MAX_THUMBNAIL_SIZE = 1.5 * 1024 * 1024; // ~1.5MB
 
@@ -231,6 +234,32 @@ export function CreatePostPage({ onPostComplete }: CreatePostPageProps = {}) {
   const handleDeleteTag = (tagToDelete: string) => {
     setAvailableTags(availableTags.filter(tag => tag !== tagToDelete));
     setSelectedTags(selectedTags.filter(tag => tag !== tagToDelete));
+  };
+
+  const handleStartEditingTag = (index: number, currentValue: string) => {
+    if (isTagEditMode) {
+      setEditingTagIndex(index);
+      setEditingTagValue(currentValue);
+    }
+  };
+
+  const handleSaveTagEdit = () => {
+    if (editingTagIndex !== null && editingTagValue.trim()) {
+      const oldTag = availableTags[editingTagIndex];
+      const newTag = editingTagValue.trim();
+      
+      // Update available tags
+      const updatedTags = [...availableTags];
+      updatedTags[editingTagIndex] = newTag;
+      setAvailableTags(updatedTags);
+      
+      // Update selected tags if the old tag was selected
+      if (selectedTags.includes(oldTag)) {
+        setSelectedTags(selectedTags.map(tag => tag === oldTag ? newTag : tag));
+      }
+    }
+    setEditingTagIndex(null);
+    setEditingTagValue('');
   };
 
   const handleAddOptionalLink = () => {
@@ -820,49 +849,111 @@ export function CreatePostPage({ onPostComplete }: CreatePostPageProps = {}) {
 
               {/* Tags */}
               <div>
-                <Label
-                  className={`mb-3 block ${
-                    theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
-                  }`}
+                <div className="flex items-center justify-between mb-3">
+                  <Label
+                    className={
+                      theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
+                    }
+                  >
+                    Problem Tags
+                  </Label>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setIsTagEditMode(!isTagEditMode);
+                      setEditingTagIndex(null);
+                      setEditingTagValue('');
+                    }}
+                    className={`h-9 px-4 text-sm font-medium transition-all ${
+                      theme === 'dark'
+                        ? 'bg-transparent hover:bg-slate-700/50 text-slate-100 border border-slate-600'
+                        : 'bg-transparent hover:bg-slate-200 text-slate-900 border border-slate-300'
+                    }`}
+                  >
+                    {isTagEditMode ? 'Done' : 'Edit'}
+                  </Button>
+                </div>
+                <div 
+                  className="flex flex-wrap gap-2 mb-4"
+                  onClick={(e) => {
+                    // Close editing when clicking empty space
+                    if (e.target === e.currentTarget) {
+                      setEditingTagIndex(null);
+                      setEditingTagValue('');
+                    }
+                  }}
                 >
-                  Problem Tags
-                </Label>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {availableTags.map(tag => (
+                  {availableTags.map((tag, index) => (
                     <div
-                      key={tag}
+                      key={`${tag}-${index}`}
                       className={`group relative inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-all ${
                         selectedTags.includes(tag)
                           ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg shadow-purple-900/30'
                           : theme === 'dark'
                           ? 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/50 hover:text-slate-100 border border-slate-700'
                           : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 border border-slate-300'
-                      }`}
+                      } ${isTagEditMode ? 'pr-2' : ''}`}
                     >
-                      <button
-                        type="button"
-                        onClick={() => handleTagClick(tag)}
-                        className="flex-1"
-                      >
-                        {tag}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={e => {
-                          e.stopPropagation();
-                          handleDeleteTag(tag);
-                        }}
-                        className={`opacity-70 hover:opacity-100 transition-opacity ${
-                          selectedTags.includes(tag)
-                            ? 'text-white hover:text-red-200'
-                            : theme === 'dark'
-                            ? 'text-slate-400 hover:text-red-400'
-                            : 'text-slate-500 hover:text-red-500'
-                        }`}
-                        title="Delete tag"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
+                      {editingTagIndex === index ? (
+                        <input
+                          type="text"
+                          value={editingTagValue}
+                          onChange={(e) => setEditingTagValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleSaveTagEdit();
+                            } else if (e.key === 'Escape') {
+                              setEditingTagIndex(null);
+                              setEditingTagValue('');
+                            }
+                          }}
+                          onBlur={handleSaveTagEdit}
+                          autoFocus
+                          className={`px-0 py-0 text-sm bg-transparent border-none outline-none ${
+                            selectedTags.includes(availableTags[index])
+                              ? 'text-white placeholder:text-white/50'
+                              : theme === 'dark'
+                              ? 'text-slate-300 placeholder:text-slate-500'
+                              : 'text-slate-700 placeholder:text-slate-400'
+                          }`}
+                          style={{ width: `${Math.max(editingTagValue.length * 8, 40)}px` }}
+                        />
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (isTagEditMode) {
+                                handleStartEditingTag(index, tag);
+                              } else {
+                                handleTagClick(tag);
+                              }
+                            }}
+                            className={`flex-1 ${isTagEditMode ? 'cursor-text' : 'cursor-pointer'}`}
+                          >
+                            {tag}
+                          </button>
+                          {isTagEditMode && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteTag(tag);
+                              }}
+                              className={`opacity-70 hover:opacity-100 transition-all hover:scale-110 ${
+                                selectedTags.includes(tag)
+                                  ? 'text-white hover:text-red-200'
+                                  : theme === 'dark'
+                                  ? 'text-slate-400 hover:text-red-400'
+                                  : 'text-slate-500 hover:text-red-500'
+                              }`}
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          )}
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>
