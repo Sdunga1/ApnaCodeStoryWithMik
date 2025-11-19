@@ -158,11 +158,15 @@ export function ImageCrop({
     }
 
     canvas.toBlob(
-      (blob) => {
+      blob => {
         if (!blob) return;
-        
+
         if (blob.size > maxImageSize) {
-          alert(`Image is too large. Please keep it under ${maxImageSize / (1024 * 1024)}MB.`);
+          alert(
+            `Image is too large. Please keep it under ${
+              maxImageSize / (1024 * 1024)
+            }MB.`
+          );
           return;
         }
 
@@ -208,17 +212,16 @@ export function ImageCrop({
     [onChange]
   );
 
-  const imageSrc = React.useMemo(() => {
-    return URL.createObjectURL(file);
-  }, [file]);
+  const [imageSrc, setImageSrc] = React.useState<string | null>(null);
 
   React.useEffect(() => {
+    const objectUrl = URL.createObjectURL(file);
+    setImageSrc(objectUrl);
+
     return () => {
-      if (imageSrc) {
-        URL.revokeObjectURL(imageSrc);
-      }
+      URL.revokeObjectURL(objectUrl);
     };
-  }, [imageSrc]);
+  }, [file]);
 
   return (
     <ImageCropContext.Provider
@@ -247,13 +250,15 @@ export function ImageCrop({
           aspect={aspect}
           circularCrop={circularCrop}
         >
-          <img
-            ref={imgRef}
-            src={imageSrc}
-            alt="Crop preview"
-            onLoad={handleImageLoad}
-            style={{ maxWidth: '100%' }}
-          />
+          {imageSrc && (
+            <img
+              ref={imgRef}
+              src={imageSrc}
+              alt="Crop preview"
+              onLoad={handleImageLoad}
+              style={{ maxWidth: '100%' }}
+            />
+          )}
         </ReactCrop>
         <canvas
           ref={previewCanvasRef}
@@ -274,8 +279,8 @@ export function ImageCropContent({ className }: { className?: string }) {
 export function ImageCropApply() {
   const { applyChanges } = useImageCrop();
   return (
-    <Button 
-      type="button" 
+    <Button
+      type="button"
       onClick={applyChanges}
       className="bg-purple-600 hover:bg-purple-700 text-white"
     >
@@ -292,4 +297,3 @@ export function ImageCropReset() {
     </Button>
   );
 }
-

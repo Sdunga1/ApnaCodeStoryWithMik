@@ -247,15 +247,17 @@ export function CreatePostPage({ onPostComplete }: CreatePostPageProps = {}) {
     if (editingTagIndex !== null && editingTagValue.trim()) {
       const oldTag = availableTags[editingTagIndex];
       const newTag = editingTagValue.trim();
-      
+
       // Update available tags
       const updatedTags = [...availableTags];
       updatedTags[editingTagIndex] = newTag;
       setAvailableTags(updatedTags);
-      
+
       // Update selected tags if the old tag was selected
       if (selectedTags.includes(oldTag)) {
-        setSelectedTags(selectedTags.map(tag => tag === oldTag ? newTag : tag));
+        setSelectedTags(
+          selectedTags.map(tag => (tag === oldTag ? newTag : tag))
+        );
       }
     }
     setEditingTagIndex(null);
@@ -873,9 +875,9 @@ export function CreatePostPage({ onPostComplete }: CreatePostPageProps = {}) {
                     {isTagEditMode ? 'Done' : 'Edit'}
                   </Button>
                 </div>
-                <div 
+                <div
                   className="flex flex-wrap gap-2 mb-4"
-                  onClick={(e) => {
+                  onClick={e => {
                     // Close editing when clicking empty space
                     if (e.target === e.currentTarget) {
                       setEditingTagIndex(null);
@@ -898,8 +900,8 @@ export function CreatePostPage({ onPostComplete }: CreatePostPageProps = {}) {
                         <input
                           type="text"
                           value={editingTagValue}
-                          onChange={(e) => setEditingTagValue(e.target.value)}
-                          onKeyDown={(e) => {
+                          onChange={e => setEditingTagValue(e.target.value)}
+                          onKeyDown={e => {
                             if (e.key === 'Enter') {
                               e.preventDefault();
                               handleSaveTagEdit();
@@ -917,7 +919,12 @@ export function CreatePostPage({ onPostComplete }: CreatePostPageProps = {}) {
                               ? 'text-slate-300 placeholder:text-slate-500'
                               : 'text-slate-700 placeholder:text-slate-400'
                           }`}
-                          style={{ width: `${Math.max(editingTagValue.length * 8, 40)}px` }}
+                          style={{
+                            width: `${Math.max(
+                              editingTagValue.length * 8,
+                              40
+                            )}px`,
+                          }}
                         />
                       ) : (
                         <>
@@ -930,14 +937,16 @@ export function CreatePostPage({ onPostComplete }: CreatePostPageProps = {}) {
                                 handleTagClick(tag);
                               }
                             }}
-                            className={`flex-1 ${isTagEditMode ? 'cursor-text' : 'cursor-pointer'}`}
+                            className={`flex-1 ${
+                              isTagEditMode ? 'cursor-text' : 'cursor-pointer'
+                            }`}
                           >
                             {tag}
                           </button>
                           {isTagEditMode && (
                             <button
                               type="button"
-                              onClick={(e) => {
+                              onClick={e => {
                                 e.stopPropagation();
                                 handleDeleteTag(tag);
                               }}
