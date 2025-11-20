@@ -485,3 +485,58 @@ export async function PUT(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const auth = await getAuthenticatedUser(request);
+    if ('error' in auth) return auth.error;
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'Post ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Verify the post exists and get its date for cleaning up daily_problems
+    const postResult = await query(
+      `SELECT post_date FROM posts WHERE id = $1`,
+      [id]
+    );
+
+    if (postResult.rows.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Post not found' },
+        { status: 404 }
+      );
+    }
+
+    const postDate = postResult.rows[0].post_date;
+
+    // Delete from daily_problems first (due to foreign key constraint)
+    await query(
+      `DELETE FROM daily_problems WHERE post_id = $1`,
+      [id]
+    );
+
+    // Delete the post
+    await query(
+      `DELETE FROM posts WHERE id = $1`,
+      [id]
+    );
+
+    return NextResponse.json(
+      { success: true, message: 'Post deleted successfully' },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error('Delete post error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}

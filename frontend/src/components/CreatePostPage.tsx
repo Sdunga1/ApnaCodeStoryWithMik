@@ -14,6 +14,8 @@ import { format } from 'date-fns';
 import { getStoredToken } from '../lib/api';
 import { cn } from './ui/utils';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { Delete } from './ui/Delete';
+import { IterationCw } from './ui/IterationCw';
 
 const DEFAULT_TAGS = [
   'Array',
@@ -398,6 +400,47 @@ export function CreatePostPage({ onPostComplete }: CreatePostPageProps = {}) {
     resetForm();
   };
 
+  const handleDeletePost = async () => {
+    if (!editingPostId) {
+      alert('No post to delete. This action is only available when editing an existing post.');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      'Are you sure you want to delete this post? This action cannot be undone.'
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const token = getStoredToken();
+      if (!token) {
+        throw new Error('You must be logged in to delete posts');
+      }
+
+      const response = await fetch(`/api/posts?id=${editingPostId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete post');
+      }
+
+      alert('Post deleted successfully!');
+      notifyPostComplete(postDate);
+      resetForm();
+    } catch (error: any) {
+      console.error('Error deleting post:', error);
+      alert(error.message || 'Failed to delete post. Please try again.');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -477,20 +520,60 @@ export function CreatePostPage({ onPostComplete }: CreatePostPageProps = {}) {
                 Share today's challenge with your students
               </p>
             </div>
-            {hasDraft && !editingPostId && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={loadDraft}
-                className={`${
+            <div className="flex items-center gap-2">
+              {hasDraft && !editingPostId && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={loadDraft}
+                  className={`${
+                    theme === 'dark'
+                      ? 'border-purple-500/40 text-purple-200 hover:bg-purple-500/10'
+                      : 'border-purple-500 text-purple-700 hover:bg-purple-50'
+                  }`}
+                >
+                  Load Saved Draft
+                </Button>
+              )}
+              <div
+                className={`flex items-center gap-1 rounded-lg ${
                   theme === 'dark'
-                    ? 'border-purple-500/40 text-purple-200 hover:bg-purple-500/10'
-                    : 'border-purple-500 text-purple-700 hover:bg-purple-50'
+                    ? 'bg-slate-800/50 border border-slate-700'
+                    : 'bg-slate-100 border border-slate-300'
                 }`}
               >
-                Load Saved Draft
-              </Button>
-            )}
+                {editingPostId && (
+                  <button
+                    type="button"
+                    onClick={handleDeletePost}
+                    className="p-1 rounded-md hover:bg-red-500/20 transition-colors"
+                    title="Delete post from database"
+                  >
+                    <Delete
+                      width={20}
+                      height={20}
+                      stroke={theme === 'dark' ? '#ef4444' : '#dc2626'}
+                      strokeWidth={2}
+                    />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    resetForm();
+                  }}
+                  className="p-1 rounded-md hover:bg-slate-700/50 transition-colors"
+                  title="Reset form fields"
+                >
+                  <IterationCw
+                    width={20}
+                    height={20}
+                    stroke={theme === 'dark' ? '#cbd5e1' : '#475569'}
+                    strokeWidth={2}
+                  />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
