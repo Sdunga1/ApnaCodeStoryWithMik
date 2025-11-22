@@ -14,6 +14,8 @@ import { format } from 'date-fns';
 import { getStoredToken } from '../lib/api';
 import { cn } from './ui/utils';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { Delete } from './ui/Delete';
+import { IterationCw } from './ui/IterationCw';
 
 const DEFAULT_TAGS = [
   'Array',
@@ -85,12 +87,16 @@ export function CreatePostPage({ onPostComplete }: CreatePostPageProps = {}) {
   const [isTagEditMode, setIsTagEditMode] = useState(false);
   const [editingTagIndex, setEditingTagIndex] = useState<number | null>(null);
   const [editingTagValue, setEditingTagValue] = useState('');
+  const [draftSaved, setDraftSaved] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
 
   const MAX_THUMBNAIL_SIZE = 1.5 * 1024 * 1024; // ~1.5MB
+  const DRAFT_STORAGE_KEY = 'post_draft';
 
   const resetForm = useCallback(() => {
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('post_edit_post_id');
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
     }
     setMotivationalQuote('');
     setProblemName('');
@@ -109,6 +115,7 @@ export function CreatePostPage({ onPostComplete }: CreatePostPageProps = {}) {
     setEditingPostId(null);
     setLoadError(null);
     setIsDatePickerOpen(false);
+    setDraftSaved(false);
   }, []);
 
   const loadPostForEditing = useCallback(
@@ -173,14 +180,119 @@ export function CreatePostPage({ onPostComplete }: CreatePostPageProps = {}) {
     [setAvailableTags]
   );
 
+  const saveDraft = useCallback(() => {
+    if (typeof window === 'undefined') return;
+
+    const draft = {
+      motivationalQuote,
+      problemName,
+      difficulty,
+      postDate: postDate.toISOString(),
+      thumbnailUrl,
+      thumbnailFileName,
+      youtubeLink,
+      leetcodeLink,
+      githubLink,
+      selectedTags,
+      optionalLinks,
+      savedAt: new Date().toISOString(),
+    };
+
+    try {
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+      setDraftSaved(true);
+      setHasDraft(true);
+      setTimeout(() => setDraftSaved(false), 3000);
+    } catch (error) {
+      console.error('Failed to save draft:', error);
+      alert('Failed to save draft. Please try again.');
+    }
+  }, [
+    motivationalQuote,
+    problemName,
+    difficulty,
+    postDate,
+    thumbnailUrl,
+    thumbnailFileName,
+    youtubeLink,
+    leetcodeLink,
+    githubLink,
+    selectedTags,
+    optionalLinks,
+  ]);
+
+  const checkForDraft = useCallback(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const draftJson = localStorage.getItem(DRAFT_STORAGE_KEY);
+      return !!draftJson;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const loadDraft = useCallback(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const draftJson = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (!draftJson) {
+        setHasDraft(false);
+        return;
+      }
+
+      const draft = JSON.parse(draftJson);
+
+      // Don't load draft if we're editing an existing post
+      if (editingPostId) {
+        setHasDraft(false);
+        return;
+      }
+
+      setMotivationalQuote(draft.motivationalQuote || '');
+      setProblemName(draft.problemName || '');
+      setDifficulty(draft.difficulty || 'Medium');
+      setPostDate(draft.postDate ? toLocalDate(draft.postDate) : new Date());
+      setThumbnailUrl(draft.thumbnailUrl || '');
+      setThumbnailFileName(draft.thumbnailFileName || '');
+      setYoutubeLink(draft.youtubeLink || '');
+      setLeetcodeLink(draft.leetcodeLink || '');
+      setGithubLink(draft.githubLink || '');
+      setSelectedTags(Array.isArray(draft.selectedTags) ? draft.selectedTags : []);
+      setOptionalLinks(Array.isArray(draft.optionalLinks) ? draft.optionalLinks : []);
+
+      // Update available tags if needed
+      if (Array.isArray(draft.selectedTags)) {
+        setAvailableTags(prev => {
+          const missing = draft.selectedTags.filter(
+            (tag: string) => !prev.includes(tag)
+          );
+          return missing.length ? [...prev, ...missing] : prev;
+        });
+      }
+
+      // Clear draft after loading
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+      setHasDraft(false);
+    } catch (error) {
+      console.error('Failed to load draft:', error);
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+      setHasDraft(false);
+    }
+  }, [editingPostId]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const storedId = sessionStorage.getItem('post_edit_post_id');
     if (storedId) {
       sessionStorage.removeItem('post_edit_post_id');
       loadPostForEditing(storedId);
+      setHasDraft(false);
+    } else {
+      // Check if draft exists
+      setHasDraft(checkForDraft());
     }
-  }, [loadPostForEditing]);
+  }, [loadPostForEditing, checkForDraft]);
 
   const handleThumbnailUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -288,6 +400,47 @@ export function CreatePostPage({ onPostComplete }: CreatePostPageProps = {}) {
     resetForm();
   };
 
+  const handleDeletePost = async () => {
+    if (!editingPostId) {
+      alert('No post to delete. This action is only available when editing an existing post.');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      'Are you sure you want to delete this post? This action cannot be undone.'
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const token = getStoredToken();
+      if (!token) {
+        throw new Error('You must be logged in to delete posts');
+      }
+
+      const response = await fetch(`/api/posts?id=${editingPostId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete post');
+      }
+
+      alert('Post deleted successfully!');
+      notifyPostComplete(postDate);
+      resetForm();
+    } catch (error: any) {
+      console.error('Error deleting post:', error);
+      alert(error.message || 'Failed to delete post. Please try again.');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -334,6 +487,11 @@ export function CreatePostPage({ onPostComplete }: CreatePostPageProps = {}) {
           ? 'Post updated successfully!'
           : 'Post published successfully!'
       );
+      // Clear draft when post is successfully published
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        setHasDraft(false);
+      }
       notifyPostComplete(postDate);
       resetForm();
     } catch (error: any) {
@@ -349,16 +507,74 @@ export function CreatePostPage({ onPostComplete }: CreatePostPageProps = {}) {
       <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
         {/* Header */}
         <div className="mb-8 pt-4">
-          <h1
-            className={`mb-2 ${
-              theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
-            }`}
-          >
-            Create Daily Post
-          </h1>
-          <p className={theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>
-            Share today's challenge with your students
-          </p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1
+                className={`mb-2 ${
+                  theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
+                }`}
+              >
+                Create Daily Post
+              </h1>
+              <p className={theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>
+                Share today's challenge with your students
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {hasDraft && !editingPostId && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={loadDraft}
+                  className={`${
+                    theme === 'dark'
+                      ? 'border-purple-500/40 text-purple-200 hover:bg-purple-500/10'
+                      : 'border-purple-500 text-purple-700 hover:bg-purple-50'
+                  }`}
+                >
+                  Load Saved Draft
+                </Button>
+              )}
+              <div
+                className={`flex items-center gap-1 rounded-lg ${
+                  theme === 'dark'
+                    ? 'bg-slate-800/50 border border-slate-700'
+                    : 'bg-slate-100 border border-slate-300'
+                }`}
+              >
+                {editingPostId && (
+                  <button
+                    type="button"
+                    onClick={handleDeletePost}
+                    className="p-1 rounded-md hover:bg-red-500/20 transition-colors"
+                    title="Delete post from database"
+                  >
+                    <Delete
+                      width={20}
+                      height={20}
+                      stroke={theme === 'dark' ? '#ef4444' : '#dc2626'}
+                      strokeWidth={2}
+                    />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    resetForm();
+                  }}
+                  className="p-1 rounded-md hover:bg-slate-700/50 transition-colors"
+                  title="Reset form fields"
+                >
+                  <IterationCw
+                    width={20}
+                    height={20}
+                    stroke={theme === 'dark' ? '#cbd5e1' : '#475569'}
+                    strokeWidth={2}
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Form */}
@@ -1106,13 +1322,14 @@ export function CreatePostPage({ onPostComplete }: CreatePostPageProps = {}) {
                 <Button
                   type="button"
                   variant="ghost"
+                  onClick={saveDraft}
                   className={
                     theme === 'dark'
                       ? 'text-slate-300 hover:text-slate-100 hover:bg-slate-800/50'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }
                 >
-                  Save Draft
+                  {draftSaved ? '✓ Draft Saved' : 'Save Draft'}
                 </Button>
                 <Button
                   type="submit"

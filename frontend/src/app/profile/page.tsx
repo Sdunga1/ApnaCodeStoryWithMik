@@ -101,7 +101,7 @@ export default function ProfilePage() {
   };
 
   const removeAvatar = () => {
-    setAvatarPreview(null);
+    setAvatarPreview('');
     setAvatarDirty(true);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -132,7 +132,10 @@ export default function ProfilePage() {
     if ((form.websiteUrl || '') !== (initialData.websiteUrl || '')) payload.websiteUrl = form.websiteUrl;
     if ((form.twitterHandle || '') !== (initialData.twitterHandle || ''))
       payload.twitterHandle = form.twitterHandle;
-    if (avatarDirty) payload.avatarData = avatarPreview ?? '';
+    if (avatarDirty) {
+      // If avatar was removed (null or empty), send empty string to clear it
+      payload.avatarData = avatarPreview === null || avatarPreview === '' ? '' : avatarPreview;
+    }
 
     if (Object.keys(payload).length === 0) {
       return null;
@@ -199,7 +202,7 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <Avatar className="h-24 w-24 bg-gradient-to-br from-purple-500 to-violet-700">
-              {avatarPreview ? (
+              {avatarPreview && avatarPreview.trim() ? (
                 <AvatarImage src={avatarPreview} alt={form.name || user?.name || 'User avatar'} />
               ) : (
                 <AvatarFallback className="text-lg text-white">
@@ -222,11 +225,11 @@ export default function ProfilePage() {
                 >
                   Upload new
                 </Button>
-                {avatarPreview && (
+                {((avatarPreview && avatarPreview.trim()) || (initialData?.avatarUrl && !avatarDirty)) ? (
                   <Button type="button" variant="ghost" onClick={removeAvatar} className="text-slate-400 hover:text-red-400">
                     Remove
                   </Button>
-                )}
+                ) : null}
               </div>
               <input
                 ref={fileInputRef}

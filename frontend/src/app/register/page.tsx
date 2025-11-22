@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Mail, Lock, User, AlertCircle } from 'lucide-react';
+import { Mail, Lock, User, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -18,6 +18,8 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { register, isAuthenticated } = useAuth();
   const { theme } = useTheme();
   const router = useRouter();
@@ -191,11 +193,11 @@ export default function RegisterPage() {
                 />
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   placeholder="Create a password (min. 8 characters)"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className={`pl-10 ${
+                  className={`pl-10 pr-10 ${
                     theme === 'dark'
                       ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500'
                       : 'bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400'
@@ -203,6 +205,20 @@ export default function RegisterPage() {
                   disabled={loading}
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
+                    theme === 'dark' ? 'text-slate-400 hover:text-slate-300' : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
               </div>
             </div>
 
@@ -221,11 +237,11 @@ export default function RegisterPage() {
                 />
                 <Input
                   id="confirmPassword"
-                  type="password"
+                  type={showConfirmPassword ? 'text' : 'password'}
                   placeholder="Confirm your password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={`pl-10 ${
+                  className={`pl-10 pr-10 ${
                     theme === 'dark'
                       ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500'
                       : 'bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400'
@@ -233,6 +249,20 @@ export default function RegisterPage() {
                   disabled={loading}
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
+                    theme === 'dark' ? 'text-slate-400 hover:text-slate-300' : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
               </div>
             </div>
 
