@@ -1,21 +1,21 @@
 import { useState, useEffect, useCallback, ChangeEvent } from 'react';
-import { Card } from './ui/card';
-import { Button, buttonVariants } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { Separator } from './ui/separator';
-import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import { Calendar } from './ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Plus, X, CalendarIcon } from 'lucide-react';
-import { useTheme } from '../contexts/ThemeContext';
 import { format } from 'date-fns';
-import { getStoredToken } from '../lib/api';
-import { cn } from './ui/utils';
-import { ImageWithFallback } from './figma/ImageWithFallback';
-import { Delete } from './ui/Delete';
-import { IterationCw } from './ui/IterationCw';
+import { Card } from '@/components/ui/card';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useTheme } from '@/contexts/ThemeContext';
+import { getStoredToken } from '@/lib/api';
+import { cn } from '@/components/ui/utils';
+import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
+import { Delete } from '@/components/ui/Delete';
+import { IterationCw } from '@/components/ui/IterationCw';
 
 const DEFAULT_TAGS = [
   'Array',
@@ -517,7 +517,7 @@ export function CreatePostPage({ onPostComplete }: CreatePostPageProps = {}) {
                 Create Daily Post
               </h1>
               <p className={theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>
-                Share today's challenge with your students
+                Share today&rsquo;s challenge with your students
               </p>
             </div>
             <div className="flex items-center gap-2">

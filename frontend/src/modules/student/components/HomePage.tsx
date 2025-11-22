@@ -9,19 +9,19 @@ import {
   Github,
   ExternalLink,
 } from 'lucide-react';
-import { Card } from './ui/card';
-import { Badge } from './ui/badge';
-import { useTheme } from '../contexts/ThemeContext';
-import { useAuth } from '../contexts/AuthContext';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from './ui/select';
+} from '@/components/ui/select';
 import { format } from 'date-fns';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 
 export interface Post {
   id: string;
@@ -471,7 +471,7 @@ export function HomePage({ onEditPost }: HomePageProps = {}) {
   const { theme } = useTheme();
   const { user, isAuthenticated } = useAuth();
   const canEditPosts = isAuthenticated && user?.role === 'creator';
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [selectedDate, setSelectedDate] = useState({
