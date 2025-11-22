@@ -22,6 +22,7 @@ import {
 } from './ui/select';
 import { format } from 'date-fns';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { Calendar28 } from './Calendar28';
 
 export interface Post {
   id: string;
@@ -693,6 +694,29 @@ export function HomePage({ onEditPost }: HomePageProps = {}) {
           </div>
         </Card>
 
+        {/* Mobile Calendar - shown only on smaller screens */}
+        <div className="lg:hidden">
+          <Card
+            className={`p-6 rounded-2xl ${
+              theme === 'dark'
+                ? 'bg-gradient-to-br from-slate-900/50 to-purple-900/30 border-purple-500/30'
+                : 'bg-gradient-to-br from-slate-50 to-purple-50 border-purple-200'
+            }`}
+          >
+            <Calendar28
+              date={
+                new Date(
+                  selectedDate.year,
+                  selectedDate.month,
+                  selectedDate.day
+                )
+              }
+              onDateChange={updateCalendarDate}
+              posts={posts}
+            />
+          </Card>
+        </div>
+
         {/* Main Content Grid */}
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Left Column - Today's Problem & Monthly List */}
@@ -950,7 +974,7 @@ export function HomePage({ onEditPost }: HomePageProps = {}) {
           </div>
 
           {/* Right Column - Calendar & Recent Updates */}
-          <div className="space-y-6">
+          <div className="hidden lg:block space-y-6">
             {/* Calendar */}
             <Card
               className={`p-6 rounded-2xl ${
