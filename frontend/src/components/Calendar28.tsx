@@ -10,8 +10,6 @@ import { Calendar } from '@/components/ui/calendar';
 
 import { Input } from '@/components/ui/input';
 
-import { Label } from '@/components/ui/label';
-
 import { useTheme } from '@/contexts/ThemeContext';
 
 function toLocalDate(value?: string | Date | null): Date {
@@ -295,21 +293,13 @@ export function Calendar28({
         </div>
       )}
 
-      <div className="flex flex-col gap-3 relative z-0">
-        <Label
-          htmlFor="date"
-          className={`px-1 ${
-            theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
-          }`}
-        >
-          Select Date
-        </Label>
-        <div className="relative flex gap-2">
+      <div className="flex justify-center relative z-0">
+        <div className="relative w-full max-w-xs">
           <Input
             id="date"
             value={value}
             placeholder="June 01, 2025"
-            className={`pr-10 ${
+            className={`pr-10 w-full ${
               theme === 'dark'
                 ? 'bg-slate-900 border-slate-700 text-slate-100 placeholder:text-slate-500'
                 : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400'
