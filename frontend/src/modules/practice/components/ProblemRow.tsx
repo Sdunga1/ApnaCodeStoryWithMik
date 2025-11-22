@@ -1,25 +1,36 @@
 'use client';
 
 import React from 'react';
-import { CheckCircle2, Circle, Star, Video } from 'lucide-react';
-import { Badge } from './ui/badge';
+import { CheckCircle2, Circle, Star, Video, GripVertical } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
-import { useTheme } from '../contexts/ThemeContext';
-
-interface Problem {
-  id: number;
-  title: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
-  completed: boolean;
-  starred: boolean;
-  hasVideo: boolean;
-}
+import { useTheme } from '@/contexts/ThemeContext';
+import { Problem } from '@/modules/practice/types';
 
 type ProblemRowProps = {
   problem: Problem;
+  isDraggable?: boolean;
+  onDragStart?: (problemId: number) => void;
+  onDrop?: (problemId: number) => void;
+  onDragEnd?: () => void;
+  onDragOver?: (problemId: number) => void;
+  isDragOver?: boolean;
+  isDragging?: boolean;
+  showHandle?: boolean;
 } & Omit<React.ComponentProps<'div'>, 'children'>;
 
-export function ProblemRow({ problem, ...props }: ProblemRowProps) {
+export function ProblemRow({
+  problem,
+  isDraggable = false,
+  onDragStart,
+  onDrop,
+  onDragEnd,
+  onDragOver,
+  isDragOver = false,
+  isDragging = false,
+  showHandle = false,
+  ...props
+}: ProblemRowProps) {
   const [isCompleted, setIsCompleted] = useState(problem.completed);
   const [isStarred, setIsStarred] = useState(problem.starred);
   const { theme } = useTheme();
@@ -36,17 +47,52 @@ export function ProblemRow({ problem, ...props }: ProblemRowProps) {
     },
   };
 
+  const handleDragStart = (event: React.DragEvent<HTMLDivElement>) => {
+    event.dataTransfer?.setData('text/plain', String(problem.id));
+    onDragStart?.(problem.id);
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    onDrop?.(problem.id);
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    if (isDraggable) {
+      event.preventDefault();
+      onDragOver?.(problem.id);
+    }
+  };
+
+  const handleDragEnd = () => {
+    onDragEnd?.();
+  };
+
   return (
     <div
       className={`group transition-colors ${
         theme === 'dark' ? 'hover:bg-slate-800/50' : 'hover:bg-slate-100/50'
-      }`}
+      } ${isDraggable ? 'cursor-grab active:cursor-grabbing' : ''} ${
+        isDragOver ? 'ring-2 ring-purple-500/40 bg-purple-500/5' : ''
+      } ${isDragging ? 'opacity-60' : ''}`}
+      draggable={isDraggable}
+      onDragStart={isDraggable ? handleDragStart : undefined}
+      onDrop={isDraggable ? handleDrop : undefined}
+      onDragOver={isDraggable ? handleDragOver : undefined}
+      onDragEnd={isDraggable ? handleDragEnd : undefined}
+      data-problem-id={problem.id}
+      {...props}
       {...props}
     >
       {/* Desktop Layout */}
       <div className="hidden md:grid md:grid-cols-12 gap-4 px-6 py-4 items-center">
         {/* Status */}
         <div className="col-span-1 flex justify-center">
+          {showHandle && (
+            <span className="text-slate-500 flex items-center mr-2">
+              <GripVertical className="w-4 h-4" />
+            </span>
+          )}
           <button
             onClick={() => setIsCompleted(!isCompleted)}
             className="transition-all hover:scale-110"
@@ -118,6 +164,11 @@ export function ProblemRow({ problem, ...props }: ProblemRowProps) {
         <div className="flex items-start gap-3">
           {/* Status and Star */}
           <div className="flex gap-2 mt-1">
+            {showHandle && (
+              <span className="text-slate-500 flex items-center">
+                <GripVertical className="w-4 h-4" />
+              </span>
+            )}
             <button
               onClick={() => setIsCompleted(!isCompleted)}
               className="transition-all hover:scale-110"

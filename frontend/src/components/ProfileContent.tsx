@@ -281,7 +281,7 @@ export function ProfileContent() {
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-8">
         <div>
           <p className="text-sm text-slate-400">
-            Let's update how the community sees you
+            Let&rsquo;s update how the community sees you
           </p>
         </div>
 
