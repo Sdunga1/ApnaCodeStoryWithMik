@@ -8,6 +8,7 @@ import {
   Youtube,
   Github,
   ExternalLink,
+  Pencil,
 } from 'lucide-react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
@@ -22,6 +23,7 @@ import {
 } from './ui/select';
 import { format } from 'date-fns';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { Calendar28 } from './Calendar28';
 
 export interface Post {
   id: string;
@@ -693,6 +695,17 @@ export function HomePage({ onEditPost }: HomePageProps = {}) {
           </div>
         </Card>
 
+        {/* Mobile Calendar - shown only on smaller screens */}
+        <div className="lg:hidden">
+          <Calendar28
+            date={
+              new Date(selectedDate.year, selectedDate.month, selectedDate.day)
+            }
+            onDateChange={updateCalendarDate}
+            posts={posts}
+          />
+        </div>
+
         {/* Main Content Grid */}
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Left Column - Today's Problem & Monthly List */}
@@ -700,43 +713,23 @@ export function HomePage({ onEditPost }: HomePageProps = {}) {
             {/* Selected Post Card */}
             {selectedPost ? (
               <Card
-                className={`p-6 rounded-2xl ${
+                className={`p-6 rounded-2xl relative ${
                   theme === 'dark'
                     ? 'bg-gradient-to-br from-slate-900/50 to-purple-900/30 border-purple-500/30'
                     : 'bg-gradient-to-br from-slate-50 to-purple-50 border-purple-200'
                 }`}
               >
                 <div className="space-y-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <p
-                        className={`mb-2 ${
-                          theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
-                        }`}
-                      >
-                        {formatDate(selectedPost.postDate)}
-                      </p>
-                      <h2
-                        className={`mb-1 ${
-                          theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
-                        }`}
-                      >
-                        {toLocalDate(selectedPost.postDate).toDateString() ===
-                        today.toDateString()
-                          ? "Today's LeetCode Problem"
-                          : 'Selected LeetCode Problem'}
-                      </h2>
-                      <h3
-                        className={`text-xl font-semibold ${
-                          theme === 'dark'
-                            ? 'text-purple-400'
-                            : 'text-purple-600'
-                        }`}
-                      >
-                        {selectedPost.problemName}
-                      </h3>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
+                  {/* Header: Date on left, Difficulty & Edit on right (same line on mobile) */}
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <p
+                      className={`${
+                        theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+                      }`}
+                    >
+                      {formatDate(selectedPost.postDate)}
+                    </p>
+                    <div className="flex items-center gap-2">
                       <Badge
                         className={difficultyColors[selectedPost.difficulty]}
                       >
@@ -745,33 +738,36 @@ export function HomePage({ onEditPost }: HomePageProps = {}) {
                       {canEditPosts && onEditPost && (
                         <button
                           onClick={() => onEditPost(selectedPost)}
-                          className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${
+                          className={`p-2 rounded-lg transition-colors border ${
                             theme === 'dark'
                               ? 'bg-slate-900/60 border-slate-700 text-slate-100 hover:bg-slate-800'
                               : 'bg-white border-slate-300 text-slate-800 hover:bg-slate-100'
                           }`}
+                          aria-label="Edit Post"
                         >
-                          Edit Post
+                          <Pencil className="w-4 h-4 sm:hidden" />
+                          <span className="hidden sm:inline-block px-[6.8px] py-[2px] text-xs font-medium">
+                            Edit Post
+                          </span>
                         </button>
                       )}
                     </div>
                   </div>
 
-                  {/* Thumbnail */}
-                  {selectedPost.thumbnailUrl && (
-                    <div className="w-full rounded-lg overflow-hidden border border-slate-700">
-                      <ImageWithFallback
-                        src={selectedPost.thumbnailUrl}
-                        alt={selectedPost.problemName}
-                        className="w-full h-auto object-contain"
-                        style={{ aspectRatio: '16/9' }}
-                      />
-                    </div>
-                  )}
+                  {/* Problem Name - full width */}
+                  <div className="w-full">
+                    <h3
+                      className={`text-xl font-semibold break-words ${
+                        theme === 'dark' ? 'text-purple-400' : 'text-purple-600'
+                      }`}
+                    >
+                      {selectedPost.problemName}
+                    </h3>
+                  </div>
 
                   {/* Tags */}
                   {selectedPost.tags && selectedPost.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 -mt-[7.04px]">
                       {selectedPost.tags.map((tag: string) => (
                         <Badge
                           key={tag}
@@ -787,33 +783,47 @@ export function HomePage({ onEditPost }: HomePageProps = {}) {
                     </div>
                   )}
 
+                  {/* Thumbnail */}
+                  {selectedPost.thumbnailUrl && (
+                    <div className="flex justify-center">
+                      <div className="w-[86.25%] sm:w-3/4 rounded-lg overflow-hidden border border-slate-700">
+                        <ImageWithFallback
+                          src={selectedPost.thumbnailUrl}
+                          alt={selectedPost.problemName}
+                          className="w-full h-auto object-contain"
+                          style={{ aspectRatio: '16/9' }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   {/* Links */}
                   <div className="flex flex-wrap gap-3 pt-4">
                     <a
                       href={selectedPost.youtubeLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors"
+                      className="flex items-center gap-1.5 px-[12.8px] py-[6.4px] bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors text-sm"
                     >
-                      <Youtube className="w-4 h-4" />
+                      <Youtube className="w-[12.8px] h-[12.8px]" />
                       Watch Solution
                     </a>
                     <a
                       href={selectedPost.leetcodeLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-lg transition-colors border border-slate-700"
+                      className="flex items-center gap-1.5 px-[12.8px] py-[6.4px] bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-lg transition-colors border border-slate-700 text-sm"
                     >
-                      <ExternalLink className="w-4 h-4" />
+                      <ExternalLink className="w-[12.8px] h-[12.8px]" />
                       LeetCode
                     </a>
                     <a
                       href={selectedPost.githubLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-lg transition-colors border border-slate-700"
+                      className="flex items-center gap-1.5 px-[12.8px] py-[6.4px] bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-lg transition-colors border border-slate-700 text-sm"
                     >
-                      <Github className="w-4 h-4" />
+                      <Github className="w-[12.8px] h-[12.8px]" />
                       Code
                     </a>
                   </div>
@@ -950,7 +960,7 @@ export function HomePage({ onEditPost }: HomePageProps = {}) {
           </div>
 
           {/* Right Column - Calendar & Recent Updates */}
-          <div className="space-y-6">
+          <div className="hidden lg:block space-y-6">
             {/* Calendar */}
             <Card
               className={`p-6 rounded-2xl ${

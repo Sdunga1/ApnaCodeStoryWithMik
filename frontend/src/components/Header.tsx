@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from './ui/button';
 import { LogOut, User as UserIcon, Menu, X } from 'lucide-react';
 
@@ -15,6 +16,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onToggleSidebar, sidebarOpen }) => {
   const { user, isAuthenticated, logout } = useAuth();
+  const { theme } = useTheme();
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -255,19 +257,31 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, sidebarOpen }) => {
                     : user.name}
                 </span>
                 {user.role === 'creator' && (
-                  <span className="text-xs bg-purple-600 px-2 py-1 rounded">
-                    Creator
+                  <span
+                    className={`text-xs overflow-hidden p-0.5 rounded-full ${
+                      theme === 'dark'
+                        ? 'bg-gradient-to-br from-purple-600 to-blue-500'
+                        : 'bg-gradient-to-br from-black to-gray-500'
+                    }`}
+                  >
+                    <span
+                      className={`flex items-center px-2 py-1 text-xs font-medium rounded-full bg-black ${
+                        theme === 'dark' ? 'text-white' : 'text-white'
+                      }`}
+                    >
+                      Creator
+                    </span>
                   </span>
                 )}
               </div>
               <Button
                 onClick={handleLogout}
                 variant="outline"
-                size="sm"
+                size="icon"
                 className="bg-transparent border-white/20 text-white hover:bg-white/10"
+                aria-label="Logout"
               >
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
+                <LogOut className="w-4 h-4" />
               </Button>
             </div>
           )}
