@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Mail, Lock, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import Orb from '@/components/Orb';
+import ShinyText from '@/components/ShinyText';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -51,7 +54,7 @@ export default function LoginPage() {
     }
 
     setLoading(true);
-    
+
     try {
       const result = await login(email, password);
       if (result.success) {
@@ -68,25 +71,47 @@ export default function LoginPage() {
 
   return (
     <div
-      className={`min-h-screen flex items-center justify-center p-4 ${
+      className={`min-h-screen flex items-center justify-center p-4 relative overflow-hidden ${
         theme === 'dark'
           ? 'bg-gradient-to-br from-[#000000] via-[#050505] to-[#0a0015]'
           : 'bg-gradient-to-br from-white via-slate-50 to-slate-100'
       }`}
     >
-      <div className="w-full max-w-md">
+      {/* Orb Background Animation */}
+      <div className="absolute inset-0 w-full h-full pointer-events-none">
+        <Orb
+          hue={0}
+          hoverIntensity={0.5}
+          rotateOnHover={true}
+          forceHoverState={false}
+          className="opacity-30"
+        />
+      </div>
+
+      {/* Content */}
+      <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
+          {/* Small Image Above Welcome Back */}
+          <div className="flex justify-center mb-2">
+            <Image
+              src="/pic.jpg"
+              alt="Logo"
+              width={100}
+              height={100}
+              className="rounded-full object-cover"
+              priority
+            />
+          </div>
           <h1
-            className={`text-3xl font-bold mb-2 ${
+            className={`text-3xl font-bold mb-2 mt-0 ${
               theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
             }`}
           >
             Welcome Back
           </h1>
-          <p
-            className={theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}
-          >
-            Sign in to continue to codestorywithMIK
+          <p className={theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>
+            Sign in to continue to{' '}
+            <ShinyText text="ApnacodestorywithMIK" disabled={false} speed={3} />
           </p>
         </div>
 
@@ -108,7 +133,9 @@ export default function LoginPage() {
             <div className="space-y-2">
               <Label
                 htmlFor="email"
-                className={theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}
+                className={
+                  theme === 'dark' ? 'text-slate-300' : 'text-slate-700'
+                }
               >
                 Email
               </Label>
@@ -123,7 +150,7 @@ export default function LoginPage() {
                   type="email"
                   placeholder="Enter your email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={e => setEmail(e.target.value)}
                   className={`pl-10 ${
                     theme === 'dark'
                       ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500'
@@ -138,7 +165,9 @@ export default function LoginPage() {
             <div className="space-y-2">
               <Label
                 htmlFor="password"
-                className={theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}
+                className={
+                  theme === 'dark' ? 'text-slate-300' : 'text-slate-700'
+                }
               >
                 Password
               </Label>
@@ -153,7 +182,7 @@ export default function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Enter your password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={e => setPassword(e.target.value)}
                   className={`pl-10 pr-10 ${
                     theme === 'dark'
                       ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500'
@@ -166,7 +195,9 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
-                    theme === 'dark' ? 'text-slate-400 hover:text-slate-300' : 'text-slate-500 hover:text-slate-700'
+                    theme === 'dark'
+                      ? 'text-slate-400 hover:text-slate-300'
+                      : 'text-slate-500 hover:text-slate-700'
                   }`}
                   tabIndex={-1}
                 >
@@ -208,4 +239,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Mail, Lock, User, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import Orb from '@/components/Orb';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -81,13 +82,25 @@ export default function RegisterPage() {
 
   return (
     <div
-      className={`min-h-screen flex items-center justify-center p-4 ${
+      className={`min-h-screen flex items-center justify-center p-4 relative overflow-hidden ${
         theme === 'dark'
           ? 'bg-gradient-to-br from-[#000000] via-[#050505] to-[#0a0015]'
           : 'bg-gradient-to-br from-white via-slate-50 to-slate-100'
       }`}
     >
-      <div className="w-full max-w-md">
+      {/* Orb Background Animation */}
+      <div className="absolute inset-0 w-full h-full pointer-events-none">
+        <Orb
+          hue={0}
+          hoverIntensity={0.5}
+          rotateOnHover={true}
+          forceHoverState={false}
+          className="opacity-30"
+        />
+      </div>
+
+      {/* Content */}
+      <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
           <h1
             className={`text-3xl font-bold mb-2 ${
