@@ -139,7 +139,7 @@ export function ProfileContent() {
 
   const handleSaveCroppedAvatar = async () => {
     if (!croppedImage || !initialData) return;
-    
+
     setSaving(true);
     try {
       const payload: ProfileUpdatePayload = {
@@ -313,7 +313,7 @@ export function ProfileContent() {
               <CardContent className="flex flex-col gap-4">
                 {!selectedFile && !croppedImage && (
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                    <Avatar className="h-24 w-24 bg-gradient-to-br from-purple-500 to-violet-700">
+                    <Avatar className="h-24 w-24 bg-gradient-to-br from-purple-500 to-violet-600">
                       {avatarPreview ? (
                         <AvatarImage
                           src={avatarPreview}
@@ -397,7 +397,8 @@ export function ProfileContent() {
                       </Avatar>
                       <div className="flex flex-col gap-2">
                         <p className="text-sm text-slate-400">
-                          Cropped image ready. Save changes to update your profile.
+                          Cropped image ready. Save changes to update your
+                          profile.
                         </p>
                       </div>
                     </div>
