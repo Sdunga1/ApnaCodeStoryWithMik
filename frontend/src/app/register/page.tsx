@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Mail, Lock, User, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import Orb from '@/components/Orb';
+import Galaxy from '@/components/Galaxy';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -88,8 +89,24 @@ export default function RegisterPage() {
           : 'bg-gradient-to-br from-white via-slate-50 to-slate-100'
       }`}
     >
-      {/* Orb Background Animation */}
+      {/* Background Animations */}
       <div className="absolute inset-0 w-full h-full pointer-events-none">
+        <Galaxy
+          mouseInteraction={true}
+          mouseRepulsion={false}
+          density={0.5}
+          glowIntensity={0.2}
+          saturation={0}
+          hueShift={140}
+          twinkleIntensity={0.3}
+          rotationSpeed={0.1}
+          repulsionStrength={2}
+          autoCenterRepulsion={0}
+          starSpeed={0.5}
+          speed={1}
+          transparent={true}
+          className="opacity-40"
+        />
         <Orb
           hue={0}
           hoverIntensity={0.5}
