@@ -1,54 +1,114 @@
 'use client';
 
-import React from 'react';
-import { ChevronDown } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { ChevronDown, Plus, Pencil, Check } from 'lucide-react';
+import { Reorder } from 'framer-motion';
 import { ProblemRow } from './ProblemRow';
-import { useState } from 'react';
+import { PracticeProblemForm } from './PracticeProblemForm';
 import { useTheme } from '../contexts/ThemeContext';
-
-interface Problem {
-  id: number;
-  title: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
-  completed: boolean;
-  starred: boolean;
-  hasVideo: boolean;
-}
+import type {
+  PracticeProblem,
+  PracticeProblemPayload,
+} from '@/types/practice';
 
 type ProblemSectionProps = {
+  id: string;
   title: string;
-  problems: Problem[];
+  problems: PracticeProblem[];
   defaultOpen?: boolean;
+  onProblemsReorder?: (updatedProblems: PracticeProblem[]) => void;
+  isEditing?: boolean;
+  onStartEditing?: (sectionId: string) => void;
+  onStopEditing?: (sectionId: string) => void;
+  editingDisabled?: boolean;
+  canManage?: boolean;
+  onAddProblem?: (
+    topicId: string,
+    payload: PracticeProblemPayload
+  ) => Promise<void>;
+  onUpdateProblem?: (
+    topicId: string,
+    problemId: string,
+    payload: PracticeProblemPayload
+  ) => Promise<void>;
 } & Omit<React.ComponentProps<'div'>, 'children'>;
 
 export function ProblemSection({
+  id: sectionId,
   title,
   problems,
   defaultOpen = false,
+  onProblemsReorder,
+  isEditing = false,
+  onStartEditing,
+  onStopEditing,
+  editingDisabled = false,
+  canManage = false,
+  onAddProblem,
+  onUpdateProblem,
   ...props
 }: ProblemSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  const [localProblems, setLocalProblems] = useState(problems);
+  const [activeForm, setActiveForm] = useState<{
+    mode: 'create' | 'edit';
+    problem?: PracticeProblem;
+  } | null>(null);
   const { theme } = useTheme();
 
-  const completedCount = problems.filter(p => p.completed).length;
-  const totalCount = problems.length;
-  const progressPercentage = (completedCount / totalCount) * 100;
+  useEffect(() => {
+    setLocalProblems(problems);
+  }, [problems]);
+
+  useEffect(() => {
+    if (!isEditing) {
+      setActiveForm(null);
+    }
+  }, [isEditing]);
+
+  const totalCount = localProblems.length;
+  const completedCount = 0;
+  const progressPercentage = 0;
+  const actionButtonClasses =
+    'flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg border bg-purple-500/10 text-purple-400 border-purple-500/20 hover:bg-purple-500/20 transition-colors text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed';
+
+  const effectiveEditing = canManage && isEditing;
+
+  const handleReorder = (updated: PracticeProblem[]) => {
+    setLocalProblems(updated);
+    onProblemsReorder?.(updated);
+  };
+
+  const handleEditToggle = () => {
+    if (!canManage) return;
+    if (effectiveEditing) {
+      setActiveForm(null);
+      onStopEditing?.(sectionId);
+    } else if (!editingDisabled) {
+      onStartEditing?.(sectionId);
+    }
+  };
+
+  const editingBanner =
+    isEditing &&
+    'border border-purple-500/50 bg-purple-500/5 shadow-inner shadow-purple-500/10';
 
   return (
     <div
+      id={sectionId}
       className={`rounded-2xl border overflow-hidden ${
         theme === 'dark'
           ? 'bg-gradient-to-br from-[#050505] to-[#1f0139] border-purple-900/30'
           : 'bg-gradient-to-br from-slate-50 to-slate-100 border-purple-200'
-      }`}
+      } ${isEditing ? 'ring-2 ring-purple-500/60' : ''}`}
       {...props}
     >
       {/* Section Header */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full px-6 py-4 flex items-center justify-between transition-colors ${
+        className={`w-full px-6 py-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between transition-colors ${
           theme === 'dark' ? 'hover:bg-slate-800/50' : 'hover:bg-slate-100/50'
-        }`}
+        } ${editingBanner ?? ''}`}
       >
         <div className="flex items-center gap-4">
           <ChevronDown
@@ -62,15 +122,30 @@ export function ProblemSection({
             >
               {title}
             </h3>
-            <p
-              className={theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}
-            >
-              {completedCount} / {totalCount} Completed
-            </p>
+            {canManage ? (
+              <>
+                <p
+                  className={theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}
+                >
+                  {completedCount} / {totalCount} Completed
+                </p>
+                {effectiveEditing && (
+                  <p className="mt-1 text-xs font-semibold text-purple-300">
+                    Drag to reorder problems
+                  </p>
+                )}
+              </>
+            ) : (
+              <p
+                className={theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}
+              >
+                {totalCount} Problems
+              </p>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-6">
           <div className="hidden sm:flex items-center gap-3">
             <div
               className={`w-32 h-2 rounded-full overflow-hidden ${
@@ -90,6 +165,51 @@ export function ProblemSection({
               {Math.round(progressPercentage)}%
             </span>
           </div>
+
+          {canManage && (
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                className={actionButtonClasses}
+                aria-label={`Add problem to ${title}`}
+                disabled={editingDisabled && !effectiveEditing}
+                onClick={() => {
+                  if (editingDisabled && !effectiveEditing) return;
+                  if (!effectiveEditing) {
+                    onStartEditing?.(sectionId);
+                  }
+                  setActiveForm({ mode: 'create' });
+                }}
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Add</span>
+              </button>
+              <button
+                type="button"
+                className={actionButtonClasses}
+                aria-label={`Edit ${title}`}
+                onClick={handleEditToggle}
+                disabled={editingDisabled && !effectiveEditing}
+              >
+                {effectiveEditing ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Done
+                  </>
+                ) : (
+                  <>
+                    <Pencil className="w-4 h-4" />
+                    <span className="hidden sm:inline">Edit</span>
+                  </>
+                )}
+              </button>
+              {editingDisabled && !effectiveEditing && (
+                <span className="text-xs text-amber-400">
+                  Clear search to edit
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </button>
 
@@ -116,15 +236,70 @@ export function ProblemSection({
           </div>
 
           {/* Problem Rows */}
-          <div
-            className={`divide-y ${
-              theme === 'dark' ? 'divide-slate-800' : 'divide-slate-200'
-            }`}
-          >
-            {problems.map(problem => (
-              <ProblemRow key={problem.id} problem={problem} />
-            ))}
-          </div>
+          {effectiveEditing ? (
+            <div className="space-y-4 p-4">
+              {activeForm && canManage && (
+                <PracticeProblemForm
+                  mode={activeForm.mode}
+                  initialValues={activeForm.problem}
+                  onSubmit={async values => {
+                    if (activeForm.mode === 'create') {
+                      await onAddProblem?.(sectionId, values);
+                    } else if (activeForm.problem) {
+                      await onUpdateProblem?.(sectionId, activeForm.problem.id, values);
+                    }
+                    setActiveForm(null);
+                  }}
+                  onCancel={() => setActiveForm(null)}
+                />
+              )}
+              <Reorder.Group
+                axis="y"
+                values={localProblems}
+                onReorder={handleReorder}
+                className="divide-y divide-transparent space-y-3"
+              >
+                {localProblems.map(problem => (
+                  <Reorder.Item
+                    key={problem.id}
+                    value={problem}
+                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/40"
+                    whileDrag={{ scale: 1.01 }}
+                  >
+                    <ProblemRow
+                      problem={problem}
+                      isEditing
+                      canEdit
+                      onEdit={() => setActiveForm({ mode: 'edit', problem })}
+                    />
+                  </Reorder.Item>
+                ))}
+              </Reorder.Group>
+            </div>
+          ) : (
+            <div
+              className={`divide-y ${
+                theme === 'dark' ? 'divide-slate-800' : 'divide-slate-200'
+              }`}
+            >
+              {localProblems.map(problem => (
+                <ProblemRow
+                  key={problem.id}
+                  problem={problem}
+                  onEdit={
+                    canManage
+                      ? () => {
+                          if (editingDisabled) return;
+                          onStartEditing?.(sectionId);
+                          setActiveForm({ mode: 'edit', problem });
+                        }
+                      : undefined
+                  }
+                  canEdit={canManage && !editingDisabled}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -1,27 +1,28 @@
 'use client';
 
 import React from 'react';
-import { CheckCircle2, Circle, Star, Video } from 'lucide-react';
+import { CheckCircle2, Circle, Star, Video, Pencil } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { useState } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
-
-interface Problem {
-  id: number;
-  title: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
-  completed: boolean;
-  starred: boolean;
-  hasVideo: boolean;
-}
+import type { PracticeProblem } from '@/types/practice';
 
 type ProblemRowProps = {
-  problem: Problem;
+  problem: PracticeProblem;
+  isEditing?: boolean;
+  onEdit?: () => void;
+  canEdit?: boolean;
 } & Omit<React.ComponentProps<'div'>, 'children'>;
 
-export function ProblemRow({ problem, ...props }: ProblemRowProps) {
-  const [isCompleted, setIsCompleted] = useState(problem.completed);
-  const [isStarred, setIsStarred] = useState(problem.starred);
+export function ProblemRow({
+  problem,
+  isEditing = false,
+  onEdit,
+  canEdit = false,
+  ...props
+}: ProblemRowProps) {
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [isStarred, setIsStarred] = useState(false);
   const { theme } = useTheme();
 
   const difficultyConfig = {
@@ -40,7 +41,8 @@ export function ProblemRow({ problem, ...props }: ProblemRowProps) {
     <div
       className={`group transition-colors ${
         theme === 'dark' ? 'hover:bg-slate-800/50' : 'hover:bg-slate-100/50'
-      }`}
+      } ${isEditing ? 'ring-2 ring-purple-500/40 bg-purple-500/5' : ''}`}
+      style={{ cursor: isEditing ? 'grab' : 'default' }}
       {...props}
     >
       {/* Desktop Layout */}
@@ -84,14 +86,19 @@ export function ProblemRow({ problem, ...props }: ProblemRowProps) {
         </div>
 
         {/* Problem Title */}
-        <div className="col-span-6">
-          <button className="text-left hover:text-purple-400 transition-colors">
+        <div className="col-span-5 lg:col-span-6">
+          <a
+            href={problem.leetcodeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-left hover:text-purple-400 transition-colors underline-offset-4 decoration-purple-400/60 hover:underline"
+          >
             {problem.title}
-          </button>
+          </a>
         </div>
 
         {/* Difficulty */}
-        <div className="col-span-2">
+        <div className="col-span-2 flex items-center">
           <Badge
             variant="outline"
             className={`${
@@ -102,12 +109,32 @@ export function ProblemRow({ problem, ...props }: ProblemRowProps) {
           </Badge>
         </div>
 
-        {/* Solution */}
-        <div className="col-span-2 flex justify-center">
-          {problem.hasVideo && (
-            <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 transition-all group-hover:scale-105">
+        {/* Solution & Edit */}
+        <div className="col-span-3 lg:col-span-2 flex justify-center gap-2">
+          {problem.solutionVideoUrl && (
+            <a
+              href={problem.solutionVideoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 transition-all group-hover:scale-105"
+            >
               <Video className="w-4 h-4" />
               <span className="hidden lg:inline">Watch</span>
+            </a>
+          )}
+          {onEdit && (
+            <button
+              type="button"
+              onClick={onEdit}
+              disabled={!canEdit}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-semibold transition ${
+                canEdit
+                  ? 'border-purple-500/40 text-purple-200 hover:bg-purple-500/10'
+                  : 'border-slate-700 text-slate-600 cursor-not-allowed'
+              }`}
+            >
+              <Pencil className="w-4 h-4" />
+              Edit
             </button>
           )}
         </div>
@@ -149,10 +176,15 @@ export function ProblemRow({ problem, ...props }: ProblemRowProps) {
           </div>
 
           {/* Problem Details */}
-          <div className="flex-1">
-            <button className="text-left hover:text-purple-400 transition-colors mb-2">
-              {problem.title}
-            </button>
+        <div className="flex-1">
+          <a
+            href={problem.leetcodeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-left hover:text-purple-400 transition-colors mb-2 block underline-offset-4 decoration-purple-400/60 hover:underline"
+          >
+            {problem.title}
+          </a>
             <div className="flex items-center gap-2">
               <Badge
                 variant="outline"
@@ -162,10 +194,30 @@ export function ProblemRow({ problem, ...props }: ProblemRowProps) {
               >
                 {problem.difficulty}
               </Badge>
-              {problem.hasVideo && (
-                <button className="flex items-center gap-2 px-3 py-1 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20">
+              {problem.solutionVideoUrl && (
+                <a
+                  href={problem.solutionVideoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-3 py-1 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                >
                   <Video className="w-4 h-4" />
                   <span>Watch</span>
+                </a>
+              )}
+              {onEdit && (
+                <button
+                  type="button"
+                  onClick={onEdit}
+                  disabled={!canEdit}
+                  className={`flex items-center gap-1 px-3 py-1 rounded-lg border text-xs font-semibold ${
+                    canEdit
+                      ? 'border-purple-500/40 text-purple-200'
+                      : 'border-slate-700 text-slate-600 cursor-not-allowed'
+                  }`}
+                >
+                  <Pencil className="w-4 h-4" />
+                  Edit
                 </button>
               )}
             </div>

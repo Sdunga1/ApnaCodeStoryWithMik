@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { HomePage, type Post as DailyPost } from '@/components/HomePage';
 import { ProfileContent } from '@/components/ProfileContent';
@@ -8,445 +8,125 @@ import { CreatePostPage } from '@/components/CreatePostPage';
 import Header from '@/components/Header';
 import { StatsCard } from '@/components/StatsCard';
 import { ProblemSection } from '@/components/ProblemSection';
-import { Search, Menu, X } from 'lucide-react';
+import { Search, Plus, Pencil, Check } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
+import type { PracticeTopic, PracticeProblem, PracticeProblemPayload } from '@/types/practice';
 
-interface Problem {
-  id: number;
-  title: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
-  completed: boolean;
-  starred: boolean;
-  hasVideo: boolean;
-}
+const sortProblems = (problems: PracticeProblem[] = []) =>
+  [...problems].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
 
-interface ProblemSection {
-  id: string;
-  title: string;
-  problems: Problem[];
-}
+const normalizeTopics = (topics: PracticeTopic[] = []): PracticeTopic[] =>
+  [...topics]
+    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+    .map(topic => ({
+      ...topic,
+      problems: sortProblems(topic.problems ?? []),
+    }));
 
-// Mock data for problems organized by topic
-const problemSections: ProblemSection[] = [
-  {
-    id: 'arrays-hashing',
-    title: 'Arrays & Hashing',
-    problems: [
-      {
-        id: 1,
-        title: 'Two Sum',
-        difficulty: 'Easy',
-        completed: true,
-        starred: true,
-        hasVideo: true,
-      },
-      {
-        id: 2,
-        title: 'Valid Anagram',
-        difficulty: 'Easy',
-        completed: true,
-        starred: false,
-        hasVideo: true,
-      },
-      {
-        id: 3,
-        title: 'Contains Duplicate',
-        difficulty: 'Easy',
-        completed: true,
-        starred: false,
-        hasVideo: true,
-      },
-      {
-        id: 4,
-        title: 'Group Anagrams',
-        difficulty: 'Medium',
-        completed: true,
-        starred: true,
-        hasVideo: true,
-      },
-      {
-        id: 5,
-        title: 'Top K Frequent Elements',
-        difficulty: 'Medium',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-      {
-        id: 6,
-        title: 'Product of Array Except Self',
-        difficulty: 'Medium',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-      {
-        id: 7,
-        title: 'Valid Sudoku',
-        difficulty: 'Medium',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-    ],
-  },
-  {
-    id: 'two-pointers',
-    title: 'Two Pointers',
-    problems: [
-      {
-        id: 8,
-        title: 'Valid Palindrome',
-        difficulty: 'Easy',
-        completed: true,
-        starred: false,
-        hasVideo: true,
-      },
-      {
-        id: 9,
-        title: 'Two Sum II - Input Array Is Sorted',
-        difficulty: 'Medium',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-      {
-        id: 10,
-        title: '3Sum',
-        difficulty: 'Medium',
-        completed: false,
-        starred: true,
-        hasVideo: true,
-      },
-      {
-        id: 11,
-        title: 'Container With Most Water',
-        difficulty: 'Medium',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-    ],
-  },
-  {
-    id: 'sliding-window',
-    title: 'Sliding Window',
-    problems: [
-      {
-        id: 12,
-        title: 'Best Time to Buy and Sell Stock',
-        difficulty: 'Easy',
-        completed: true,
-        starred: false,
-        hasVideo: true,
-      },
-      {
-        id: 13,
-        title: 'Longest Substring Without Repeating Characters',
-        difficulty: 'Medium',
-        completed: false,
-        starred: true,
-        hasVideo: true,
-      },
-      {
-        id: 14,
-        title: 'Longest Repeating Character Replacement',
-        difficulty: 'Medium',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-      {
-        id: 15,
-        title: 'Minimum Window Substring',
-        difficulty: 'Hard',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-    ],
-  },
-  {
-    id: 'stack',
-    title: 'Stack',
-    problems: [
-      {
-        id: 16,
-        title: 'Valid Parentheses',
-        difficulty: 'Easy',
-        completed: true,
-        starred: true,
-        hasVideo: true,
-      },
-      {
-        id: 17,
-        title: 'Min Stack',
-        difficulty: 'Medium',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-      {
-        id: 18,
-        title: 'Daily Temperatures',
-        difficulty: 'Medium',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-      {
-        id: 19,
-        title: 'Largest Rectangle in Histogram',
-        difficulty: 'Hard',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-    ],
-  },
-  {
-    id: 'binary-search',
-    title: 'Binary Search',
-    problems: [
-      {
-        id: 20,
-        title: 'Binary Search',
-        difficulty: 'Easy',
-        completed: true,
-        starred: false,
-        hasVideo: true,
-      },
-      {
-        id: 21,
-        title: 'Search in Rotated Sorted Array',
-        difficulty: 'Medium',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-      {
-        id: 22,
-        title: 'Find Minimum in Rotated Sorted Array',
-        difficulty: 'Medium',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-    ],
-  },
-  {
-    id: 'linked-list',
-    title: 'Linked List',
-    problems: [
-      {
-        id: 23,
-        title: 'Reverse Linked List',
-        difficulty: 'Easy',
-        completed: true,
-        starred: true,
-        hasVideo: true,
-      },
-      {
-        id: 24,
-        title: 'Merge Two Sorted Lists',
-        difficulty: 'Easy',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-      {
-        id: 25,
-        title: 'Reorder List',
-        difficulty: 'Medium',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-      {
-        id: 26,
-        title: 'Remove Nth Node From End of List',
-        difficulty: 'Medium',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-    ],
-  },
-  {
-    id: 'trees',
-    title: 'Trees',
-    problems: [
-      {
-        id: 27,
-        title: 'Invert Binary Tree',
-        difficulty: 'Easy',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-      {
-        id: 28,
-        title: 'Maximum Depth of Binary Tree',
-        difficulty: 'Easy',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-      {
-        id: 29,
-        title: 'Binary Tree Level Order Traversal',
-        difficulty: 'Medium',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-      {
-        id: 30,
-        title: 'Validate Binary Search Tree',
-        difficulty: 'Medium',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-    ],
-  },
-  {
-    id: 'graphs',
-    title: 'Graphs',
-    problems: [
-      {
-        id: 31,
-        title: 'Number of Islands',
-        difficulty: 'Medium',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-      {
-        id: 32,
-        title: 'Clone Graph',
-        difficulty: 'Medium',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-      {
-        id: 33,
-        title: 'Course Schedule',
-        difficulty: 'Medium',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-      {
-        id: 34,
-        title: 'Word Ladder',
-        difficulty: 'Hard',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-    ],
-  },
-  {
-    id: 'dynamic-programming',
-    title: 'Dynamic Programming',
-    problems: [
-      {
-        id: 35,
-        title: 'Climbing Stairs',
-        difficulty: 'Easy',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-      {
-        id: 36,
-        title: 'House Robber',
-        difficulty: 'Medium',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-      {
-        id: 37,
-        title: 'Longest Increasing Subsequence',
-        difficulty: 'Medium',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-      {
-        id: 38,
-        title: 'Coin Change',
-        difficulty: 'Medium',
-        completed: false,
-        starred: false,
-        hasVideo: true,
-      },
-    ],
-  },
-];
+const applyProblemOrder = (problems: PracticeProblem[]) =>
+  problems.map((problem, index) => ({ ...problem, position: index + 1 }));
+
+const applyTopicOrder = (topics: PracticeTopic[]) =>
+  topics.map((topic, index) => ({
+    ...topic,
+    position: index + 1,
+    problems: sortProblems(topic.problems),
+  }));
+import { Reorder } from 'framer-motion';
 
 export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeView, setActiveView] = useState('home');
+  const [topicSections, setTopicSections] = useState<PracticeTopic[]>([]);
+  const [practiceLoading, setPracticeLoading] = useState(true);
+  const [practiceError, setPracticeError] = useState<string | null>(null);
+  const [isGlobalEditing, setIsGlobalEditing] = useState(false);
+  const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
+  const [topicOrderDirty, setTopicOrderDirty] = useState(false);
   const { theme } = useTheme();
+  const { user, isAuthenticated } = useAuth();
+  const canManagePractice = isAuthenticated && user?.role === 'creator';
+  const sharedActionButtonClasses =
+    'flex items-center gap-2 px-4 py-2 rounded-lg border bg-purple-500/10 text-purple-400 border-purple-500/20 hover:bg-purple-500/20 transition-colors text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed';
+  const isFiltering = searchQuery.trim().length > 0;
 
   // Calculate stats
-  const totalProblems = problemSections.reduce(
+  const totalProblems = topicSections.reduce(
     (acc, section) => acc + section.problems.length,
     0
   );
-  const completedProblems = problemSections.reduce(
-    (acc, section) => acc + section.problems.filter(p => p.completed).length,
-    0
+  const difficultyTotals = topicSections.reduce(
+    (acc, section) => {
+      section.problems.forEach(problem => {
+        if (problem.difficulty === 'Easy') acc.easy += 1;
+        if (problem.difficulty === 'Medium') acc.medium += 1;
+        if (problem.difficulty === 'Hard') acc.hard += 1;
+      });
+      return acc;
+    },
+    { easy: 0, medium: 0, hard: 0 }
   );
 
-  const easyCompleted = problemSections.reduce(
-    (acc, section) =>
-      acc +
-      section.problems.filter(p => p.completed && p.difficulty === 'Easy')
-        .length,
-    0
-  );
-  const easyTotal = problemSections.reduce(
-    (acc, section) =>
-      acc + section.problems.filter(p => p.difficulty === 'Easy').length,
-    0
+  const completedProblems = 0;
+  const easyCompleted = 0;
+  const mediumCompleted = 0;
+  const hardCompleted = 0;
+  const easyTotal = difficultyTotals.easy;
+  const mediumTotal = difficultyTotals.medium;
+  const hardTotal = difficultyTotals.hard;
+
+  const updateTopicProblems = useCallback(
+    (
+      topicId: string,
+      updater: (problems: PracticeProblem[]) => PracticeProblem[]
+    ) => {
+      setTopicSections(prev =>
+        prev.map(section =>
+          section.id === topicId
+            ? { ...section, problems: updater(section.problems ?? []) }
+            : section
+        )
+      );
+    },
+    []
   );
 
-  const mediumCompleted = problemSections.reduce(
-    (acc, section) =>
-      acc +
-      section.problems.filter(p => p.completed && p.difficulty === 'Medium')
-        .length,
-    0
-  );
-  const mediumTotal = problemSections.reduce(
-    (acc, section) =>
-      acc + section.problems.filter(p => p.difficulty === 'Medium').length,
-    0
-  );
+  const fetchPracticeData = useCallback(async () => {
+    setPracticeLoading(true);
+    try {
+      const response = await fetch('/api/practice');
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Unable to load practice roadmap');
+      }
+      setTopicSections(normalizeTopics(data.topics ?? []));
+      setPracticeError(null);
+    } catch (error: any) {
+      console.error('Failed to load practice topics', error);
+      setPracticeError(error?.message ?? 'Unable to load practice roadmap');
+    } finally {
+      setPracticeLoading(false);
+    }
+  }, []);
 
-  const hardCompleted = problemSections.reduce(
-    (acc, section) =>
-      acc +
-      section.problems.filter(p => p.completed && p.difficulty === 'Hard')
-        .length,
-    0
-  );
-  const hardTotal = problemSections.reduce(
-    (acc, section) =>
-      acc + section.problems.filter(p => p.difficulty === 'Hard').length,
-    0
-  );
+  useEffect(() => {
+    fetchPracticeData();
+  }, [fetchPracticeData]);
+
+  useEffect(() => {
+    if (!canManagePractice) {
+      setIsGlobalEditing(false);
+      setEditingSectionId(null);
+      setTopicOrderDirty(false);
+    }
+  }, [canManagePractice]);
 
   // Filter problems based on search
   const filteredSections = searchQuery
-    ? problemSections
+    ? topicSections
         .map(section => ({
           ...section,
           problems: section.problems.filter(problem =>
@@ -454,7 +134,8 @@ export default function Home() {
           ),
         }))
         .filter(section => section.problems.length > 0)
-    : problemSections;
+    : topicSections;
+  const sectionsToRender = isGlobalEditing ? topicSections : filteredSections;
 
   const handleEditPost = useCallback((post: DailyPost) => {
     if (!post?.id) return;
@@ -472,6 +153,149 @@ export default function Home() {
       setActiveView('home');
     },
     []
+  );
+
+  const handleProblemsReorder = useCallback(
+    (sectionId: string, updatedProblems: PracticeProblem[]) => {
+      setTopicSections(prev =>
+        prev.map(section =>
+          section.id === sectionId
+            ? { ...section, problems: applyProblemOrder(updatedProblems) }
+            : section
+        )
+      );
+    },
+    []
+  );
+
+  const persistProblemOrder = useCallback(
+    async (sectionId: string) => {
+      if (!canManagePractice) return;
+      const section = topicSections.find(topic => topic.id === sectionId);
+      if (!section || section.problems.length === 0) return;
+      try {
+        await fetch('/api/practice/problems/reorder', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            topicId: sectionId,
+            orderedIds: section.problems.map(problem => problem.id),
+          }),
+        });
+      } catch (error) {
+        console.error('Failed to persist problem order', error);
+      }
+    },
+    [canManagePractice, topicSections]
+  );
+
+  const persistTopicOrder = useCallback(async () => {
+    if (!canManagePractice || !topicOrderDirty || topicSections.length === 0) return;
+    try {
+      await fetch('/api/practice/topics/reorder', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderedIds: topicSections.map(topic => topic.id),
+        }),
+      });
+      setTopicOrderDirty(false);
+    } catch (error) {
+      console.error('Failed to persist topic order', error);
+    }
+  }, [canManagePractice, topicOrderDirty, topicSections]);
+
+  const handleProblemCreate = useCallback(
+    async (topicId: string, payload: PracticeProblemPayload) => {
+      if (!canManagePractice) {
+        throw new Error('Not authorized');
+      }
+      const response = await fetch('/api/practice/problems', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, topicId }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Unable to add problem');
+      }
+      updateTopicProblems(topicId, problems =>
+        sortProblems([...problems, data.problem as PracticeProblem])
+      );
+    },
+    [canManagePractice, updateTopicProblems]
+  );
+
+  const handleProblemUpdate = useCallback(
+    async (
+      topicId: string,
+      problemId: string,
+      payload: PracticeProblemPayload
+    ) => {
+      if (!canManagePractice) {
+        throw new Error('Not authorized');
+      }
+      const response = await fetch(`/api/practice/problems/${problemId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Unable to update problem');
+      }
+      updateTopicProblems(topicId, problems =>
+        sortProblems(
+          problems.map(problem =>
+            problem.id === problemId ? (data.problem as PracticeProblem) : problem
+          )
+        )
+      );
+    },
+    [canManagePractice, updateTopicProblems]
+  );
+
+  const handleGlobalEditToggle = useCallback(async () => {
+    if (!canManagePractice) return;
+    if (!isGlobalEditing) {
+      if (isFiltering) {
+        return;
+      }
+      if (searchQuery) {
+        setSearchQuery('');
+      }
+      setEditingSectionId(null);
+      setIsGlobalEditing(true);
+      setTopicOrderDirty(false);
+      return;
+    }
+    setIsGlobalEditing(false);
+    setEditingSectionId(null);
+    await persistTopicOrder();
+  }, [canManagePractice, isGlobalEditing, isFiltering, persistTopicOrder, searchQuery]);
+
+  const handleSectionEditStart = useCallback(
+    (sectionId: string) => {
+      if (!canManagePractice) return;
+      if (isFiltering) {
+        return;
+      }
+      if (searchQuery) {
+        setSearchQuery('');
+      }
+      setIsGlobalEditing(false);
+      setEditingSectionId(sectionId);
+    },
+    [canManagePractice, isFiltering, searchQuery]
+  );
+
+  const handleSectionEditStop = useCallback(
+    async (sectionId: string) => {
+      if (!canManagePractice) return;
+      setEditingSectionId(null);
+      await persistProblemOrder(sectionId);
+    },
+    [canManagePractice, persistProblemOrder]
   );
 
   return (
@@ -550,6 +374,57 @@ export default function Home() {
               hardTotal={hardTotal}
             />
 
+            {practiceError && (
+              <div className="my-6 rounded-2xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+                {practiceError}
+              </div>
+            )}
+
+            {canManagePractice && (
+              <>
+                <div className="flex flex-wrap gap-3 my-8 items-center">
+                  <button type="button" className={sharedActionButtonClasses}>
+                    <Plus className="w-4 h-4" />
+                    Add Topic
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleGlobalEditToggle}
+                    className={sharedActionButtonClasses}
+                    disabled={isFiltering && !isGlobalEditing}
+                  >
+                    {isGlobalEditing ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        Done Reordering
+                      </>
+                    ) : (
+                      <>
+                        <Pencil className="w-4 h-4" />
+                        Edit Topics
+                      </>
+                    )}
+                  </button>
+                  {isFiltering && !isGlobalEditing && (
+                    <span className="text-xs text-amber-400">
+                      Clear search to reorder topics
+                    </span>
+                  )}
+                </div>
+
+                {isGlobalEditing && (
+                  <div className="mb-6 rounded-2xl border border-purple-500/40 bg-purple-500/10 px-4 py-3 text-sm text-purple-100 flex items-center gap-2">
+                    <span className="font-semibold uppercase tracking-wide text-xs">
+                      Topic reorder mode
+                    </span>
+                    <span className="text-purple-200">
+                      Drag & drop topic cards to rearrange your roadmap.
+                    </span>
+                  </div>
+                )}
+              </>
+            )}
+
             {/* Search Bar */}
             <div className="mb-8">
               <div className="relative">
@@ -572,19 +447,89 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Problem Sections */}
-            <div className="space-y-6">
-              {filteredSections.map((section, index) => (
-                <ProblemSection
-                  key={section.id}
-                  title={section.title}
-                  problems={section.problems}
-                  defaultOpen={index === 0}
-                />
-              ))}
-            </div>
+            {practiceLoading ? (
+              <div className="py-16 text-center text-slate-400">
+                Loading practice roadmap...
+              </div>
+            ) : (
+              <>
+                {/* Problem Sections */}
+                <div className="space-y-6">
+                  {isGlobalEditing && canManagePractice ? (
+                    <Reorder.Group
+                      axis="y"
+                      values={topicSections}
+                      onReorder={newOrder => {
+                        setTopicSections(applyTopicOrder(newOrder));
+                        setTopicOrderDirty(true);
+                      }}
+                      className="space-y-6"
+                    >
+                      {topicSections.map(section => (
+                        <Reorder.Item
+                          key={section.id}
+                          value={section}
+                          className="rounded-[22px] ring-2 ring-purple-500/40 bg-purple-500/5 cursor-grab"
+                          whileDrag={{ scale: 1.02 }}
+                        >
+                          <ProblemSection
+                            id={section.id}
+                            title={section.title}
+                            problems={section.problems}
+                            defaultOpen={false}
+                            onProblemsReorder={updated =>
+                              handleProblemsReorder(section.id, updated)
+                            }
+                            editingDisabled
+                            canManage={canManagePractice}
+                            onAddProblem={canManagePractice ? handleProblemCreate : undefined}
+                            onUpdateProblem={
+                              canManagePractice ? handleProblemUpdate : undefined
+                            }
+                            onStartEditing={handleSectionEditStart}
+                            onStopEditing={handleSectionEditStop}
+                          />
+                        </Reorder.Item>
+                      ))}
+                    </Reorder.Group>
+                  ) : (
+                    sectionsToRender.map((section, index) => {
+                      const isSectionEditing = editingSectionId === section.id;
+                      const sectionEditingDisabled =
+                        isGlobalEditing ||
+                        (editingSectionId !== null && !isSectionEditing) ||
+                        isFiltering ||
+                        practiceLoading ||
+                        !canManagePractice;
 
-            {filteredSections.length === 0 && (
+                      return (
+                        <ProblemSection
+                          key={section.id}
+                          id={section.id}
+                          title={section.title}
+                          problems={section.problems}
+                          defaultOpen={index === 0}
+                          onProblemsReorder={updated =>
+                            handleProblemsReorder(section.id, updated)
+                          }
+                          isEditing={isSectionEditing}
+                          onStartEditing={handleSectionEditStart}
+                          onStopEditing={handleSectionEditStop}
+                          editingDisabled={sectionEditingDisabled}
+                          canManage={canManagePractice}
+                          onAddProblem={
+                            canManagePractice ? handleProblemCreate : undefined
+                          }
+                          onUpdateProblem={
+                            canManagePractice ? handleProblemUpdate : undefined
+                          }
+                        />
+                      );
+                    })
+                  )}
+                </div>
+
+                {!isGlobalEditing && filteredSections.length === 0 && (
               <div className="text-center py-16">
                 <p
                   className={
@@ -594,6 +539,8 @@ export default function Home() {
                   No problems found matching your search.
                 </p>
               </div>
+                )}
+              </>
             )}
           </div>
         ) : (
