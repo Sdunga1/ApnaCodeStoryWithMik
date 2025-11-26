@@ -6,10 +6,7 @@ import { Reorder } from 'framer-motion';
 import { ProblemRow } from './ProblemRow';
 import { PracticeProblemForm } from './PracticeProblemForm';
 import { useTheme } from '../contexts/ThemeContext';
-import type {
-  PracticeProblem,
-  PracticeProblemPayload,
-} from '@/types/practice';
+import type { PracticeProblem, PracticeProblemPayload } from '@/types/practice';
 
 type ProblemSectionProps = {
   id: string;
@@ -69,8 +66,16 @@ export function ProblemSection({
   const totalCount = localProblems.length;
   const completedCount = 0;
   const progressPercentage = 0;
-  const actionButtonClasses =
-    'flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg border bg-purple-500/10 text-purple-400 border-purple-500/20 hover:bg-purple-500/20 transition-colors text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed';
+  const baseActionButtonClasses =
+    'inline-flex items-center justify-center rounded-2xl p-2.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed';
+  const addButtonClasses =
+    theme === 'dark'
+      ? `${baseActionButtonClasses} text-slate-100 border border-white/15 bg-white/5 hover:bg-white/10`
+      : `${baseActionButtonClasses} text-slate-900 border border-slate-200 bg-white hover:bg-slate-50`;
+  const editButtonClasses =
+    theme === 'dark'
+      ? `${baseActionButtonClasses} text-white/80 bg-white/6 border border-white/10 hover:text-white`
+      : `${baseActionButtonClasses} text-slate-800 bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-50`;
 
   const effectiveEditing = canManage && isEditing;
 
@@ -125,7 +130,9 @@ export function ProblemSection({
             {canManage ? (
               <>
                 <p
-                  className={theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}
+                  className={
+                    theme === 'dark' ? 'text-slate-500' : 'text-slate-600'
+                  }
                 >
                   {completedCount} / {totalCount} Completed
                 </p>
@@ -137,7 +144,9 @@ export function ProblemSection({
               </>
             ) : (
               <p
-                className={theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}
+                className={
+                  theme === 'dark' ? 'text-slate-500' : 'text-slate-600'
+                }
               >
                 {totalCount} Problems
               </p>
@@ -146,31 +155,33 @@ export function ProblemSection({
         </div>
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-6">
-          <div className="hidden sm:flex items-center gap-3">
-            <div
-              className={`w-32 h-2 rounded-full overflow-hidden ${
-                theme === 'dark' ? 'bg-slate-800' : 'bg-slate-200'
-              }`}
-            >
+          {!canManage && (
+            <div className="hidden sm:flex items-center gap-3">
               <div
-                className="h-full bg-gradient-to-r from-purple-500 to-violet-600"
-                style={{ width: `${progressPercentage}%` }}
-              />
+                className={`w-32 h-2 rounded-full overflow-hidden ${
+                  theme === 'dark' ? 'bg-slate-800' : 'bg-slate-200'
+                }`}
+              >
+                <div
+                  className="h-full bg-gradient-to-r from-purple-500 to-violet-600"
+                  style={{ width: `${progressPercentage}%` }}
+                />
+              </div>
+              <span
+                className={`min-w-[3rem] text-right ${
+                  theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+                }`}
+              >
+                {Math.round(progressPercentage)}%
+              </span>
             </div>
-            <span
-              className={`min-w-[3rem] text-right ${
-                theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
-              }`}
-            >
-              {Math.round(progressPercentage)}%
-            </span>
-          </div>
+          )}
 
           {canManage && (
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                className={actionButtonClasses}
+                className={addButtonClasses}
                 aria-label={`Add problem to ${title}`}
                 disabled={editingDisabled && !effectiveEditing}
                 onClick={() => {
@@ -182,24 +193,24 @@ export function ProblemSection({
                 }}
               >
                 <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Add</span>
+                <span className="sr-only">Add problem</span>
               </button>
               <button
                 type="button"
-                className={actionButtonClasses}
+                className={editButtonClasses}
                 aria-label={`Edit ${title}`}
                 onClick={handleEditToggle}
                 disabled={editingDisabled && !effectiveEditing}
               >
                 {effectiveEditing ? (
                   <>
-                    <Check className="w-4 h-4" />
-                    Done
+                    <Check className="w-4 h-4 text-emerald-400" />
+                    <span className="sr-only">Done editing</span>
                   </>
                 ) : (
                   <>
-                    <Pencil className="w-4 h-4" />
-                    <span className="hidden sm:inline">Edit</span>
+                    <Pencil className="w-4 h-4 text-rose-400" />
+                    <span className="sr-only">Edit</span>
                   </>
                 )}
               </button>
@@ -246,7 +257,11 @@ export function ProblemSection({
                     if (activeForm.mode === 'create') {
                       await onAddProblem?.(sectionId, values);
                     } else if (activeForm.problem) {
-                      await onUpdateProblem?.(sectionId, activeForm.problem.id, values);
+                      await onUpdateProblem?.(
+                        sectionId,
+                        activeForm.problem.id,
+                        values
+                      );
                     }
                     setActiveForm(null);
                   }}

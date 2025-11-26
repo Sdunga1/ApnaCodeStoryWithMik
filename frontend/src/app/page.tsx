@@ -12,6 +12,7 @@ import { Search, Plus, Pencil, Check } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { ChevronsUpDown } from '@/components/icons/ChevronsUpDown';
 import type {
   PracticeTopic,
   PracticeProblem,
@@ -451,8 +452,12 @@ export default function Home() {
                           </>
                         ) : (
                           <>
-                            <Pencil className="w-4 h-4" />
-                            Edit Topics
+                            <ChevronsUpDown
+                              width={18}
+                              height={18}
+                              stroke={theme === 'dark' ? '#ffffff' : '#0f172a'}
+                            />
+                            Reorder
                           </>
                         )}
                       </button>
