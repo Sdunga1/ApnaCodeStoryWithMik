@@ -53,6 +53,11 @@ export function StatsCard({
     },
   ];
 
+  const totalPercent =
+    totalProblems && totalProblems > 0
+      ? Math.round((total / totalProblems) * 100)
+      : 0;
+
   return (
     <div
       className={`rounded-2xl border p-6 mb-8 ${
@@ -110,7 +115,7 @@ export function StatsCard({
           <div
             className={theme === 'dark' ? 'text-purple-400' : 'text-purple-600'}
           >
-            {Math.round((total / totalProblems) * 100)}%
+            {totalPercent}%
           </div>
         </div>
       </div>
@@ -146,7 +151,16 @@ export function StatsCard({
             >
               <div
                 className={`h-full ${stat.color.replace('text-', 'bg-')}`}
-                style={{ width: `${(stat.completed / stat.total) * 100}%` }}
+                style={{
+                  width: `${
+                    stat.total > 0
+                      ? Math.min(
+                          100,
+                          Math.max(0, (stat.completed / stat.total) * 100)
+                        )
+                      : 0
+                  }%`,
+                }}
               />
             </div>
           </div>
