@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Mail, Lock, User, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import Orb from '@/components/Orb';
+import { Starfield } from '@/components/Starfield';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -90,6 +91,7 @@ export default function RegisterPage() {
     >
       {/* Background Animation */}
       <div className="absolute inset-0 w-full h-full pointer-events-none">
+        <Starfield className="opacity-25" starCount={160} />
         <Orb
           hue={0}
           hoverIntensity={0.5}
