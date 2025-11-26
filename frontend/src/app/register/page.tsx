@@ -11,7 +11,6 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Mail, Lock, User, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import Orb from '@/components/Orb';
-import Galaxy from '@/components/Galaxy';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -66,7 +65,7 @@ export default function RegisterPage() {
     }
 
     setLoading(true);
-    
+
     try {
       const result = await register(name.trim(), email.trim(), password);
       if (result.success) {
@@ -89,24 +88,8 @@ export default function RegisterPage() {
           : 'bg-gradient-to-br from-white via-slate-50 to-slate-100'
       }`}
     >
-      {/* Background Animations */}
+      {/* Background Animation */}
       <div className="absolute inset-0 w-full h-full pointer-events-none">
-        <Galaxy
-          mouseInteraction={true}
-          mouseRepulsion={false}
-          density={0.5}
-          glowIntensity={0.2}
-          saturation={0}
-          hueShift={140}
-          twinkleIntensity={0.3}
-          rotationSpeed={0.1}
-          repulsionStrength={2}
-          autoCenterRepulsion={0}
-          starSpeed={0.5}
-          speed={1}
-          transparent={true}
-          className="opacity-40"
-        />
         <Orb
           hue={0}
           hoverIntensity={0.5}
@@ -126,9 +109,7 @@ export default function RegisterPage() {
           >
             Create Account
           </h1>
-          <p
-            className={theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}
-          >
+          <p className={theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>
             Join codestorywithMIK to start your journey
           </p>
         </div>
@@ -151,7 +132,9 @@ export default function RegisterPage() {
             <div className="space-y-2">
               <Label
                 htmlFor="name"
-                className={theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}
+                className={
+                  theme === 'dark' ? 'text-slate-300' : 'text-slate-700'
+                }
               >
                 Full Name
               </Label>
@@ -166,7 +149,7 @@ export default function RegisterPage() {
                   type="text"
                   placeholder="Enter your full name"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={e => setName(e.target.value)}
                   className={`pl-10 ${
                     theme === 'dark'
                       ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500'
@@ -181,7 +164,9 @@ export default function RegisterPage() {
             <div className="space-y-2">
               <Label
                 htmlFor="email"
-                className={theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}
+                className={
+                  theme === 'dark' ? 'text-slate-300' : 'text-slate-700'
+                }
               >
                 Email
               </Label>
@@ -196,7 +181,7 @@ export default function RegisterPage() {
                   type="email"
                   placeholder="Enter your email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={e => setEmail(e.target.value)}
                   className={`pl-10 ${
                     theme === 'dark'
                       ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500'
@@ -211,7 +196,9 @@ export default function RegisterPage() {
             <div className="space-y-2">
               <Label
                 htmlFor="password"
-                className={theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}
+                className={
+                  theme === 'dark' ? 'text-slate-300' : 'text-slate-700'
+                }
               >
                 Password
               </Label>
@@ -226,7 +213,7 @@ export default function RegisterPage() {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Create a password (min. 8 characters)"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={e => setPassword(e.target.value)}
                   className={`pl-10 pr-10 ${
                     theme === 'dark'
                       ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500'
@@ -239,7 +226,9 @@ export default function RegisterPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
-                    theme === 'dark' ? 'text-slate-400 hover:text-slate-300' : 'text-slate-500 hover:text-slate-700'
+                    theme === 'dark'
+                      ? 'text-slate-400 hover:text-slate-300'
+                      : 'text-slate-500 hover:text-slate-700'
                   }`}
                   tabIndex={-1}
                 >
@@ -255,7 +244,9 @@ export default function RegisterPage() {
             <div className="space-y-2">
               <Label
                 htmlFor="confirmPassword"
-                className={theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}
+                className={
+                  theme === 'dark' ? 'text-slate-300' : 'text-slate-700'
+                }
               >
                 Confirm Password
               </Label>
@@ -270,7 +261,7 @@ export default function RegisterPage() {
                   type={showConfirmPassword ? 'text' : 'password'}
                   placeholder="Confirm your password"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={e => setConfirmPassword(e.target.value)}
                   className={`pl-10 pr-10 ${
                     theme === 'dark'
                       ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500'
@@ -283,7 +274,9 @@ export default function RegisterPage() {
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
-                    theme === 'dark' ? 'text-slate-400 hover:text-slate-300' : 'text-slate-500 hover:text-slate-700'
+                    theme === 'dark'
+                      ? 'text-slate-400 hover:text-slate-300'
+                      : 'text-slate-500 hover:text-slate-700'
                   }`}
                   tabIndex={-1}
                 >
@@ -325,4 +318,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-

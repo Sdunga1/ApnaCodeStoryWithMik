@@ -184,6 +184,10 @@ export default function Orb({
 
   useEffect(() => {
     const container = containerRef.current;
+    container.setAttribute('aria-hidden', 'true');
+    container.setAttribute('role', 'presentation');
+    container.tabIndex = -1;
+    container.style.outline = 'none';
     if (!container) return;
 
     // Initialize renderer
@@ -194,6 +198,10 @@ export default function Orb({
     const gl = renderer.gl;
     gl.clearColor(0, 0, 0, 0);
     container.appendChild(gl.canvas);
+    gl.canvas.setAttribute('aria-hidden', 'true');
+    gl.canvas.setAttribute('role', 'presentation');
+    gl.canvas.tabIndex = -1;
+    gl.canvas.style.pointerEvents = 'none';
 
     rendererRef.current = renderer;
 

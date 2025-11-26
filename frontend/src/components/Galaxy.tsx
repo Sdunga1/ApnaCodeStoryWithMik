@@ -210,6 +210,10 @@ export default function Galaxy({
     if (!containerRef.current) return;
 
     const container = containerRef.current;
+    container.setAttribute('aria-hidden', 'true');
+    container.setAttribute('role', 'presentation');
+    (container as HTMLDivElement).tabIndex = -1;
+    container.style.outline = 'none';
 
     const renderer = new Renderer({
       alpha: transparent,
@@ -315,6 +319,10 @@ export default function Galaxy({
 
     rafIdRef.current = requestAnimationFrame(update);
     container.appendChild(gl.canvas);
+    gl.canvas.setAttribute('aria-hidden', 'true');
+    gl.canvas.setAttribute('role', 'presentation');
+    (gl.canvas as HTMLCanvasElement).tabIndex = -1;
+    gl.canvas.style.pointerEvents = 'none';
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!container) return;

@@ -13,7 +13,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Mail, Lock, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import Orb from '@/components/Orb';
 import ShinyText from '@/components/ShinyText';
-import Galaxy from '@/components/Galaxy';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -78,33 +77,15 @@ export default function LoginPage() {
           : 'bg-gradient-to-br from-white via-slate-50 to-slate-100'
       }`}
     >
-      {/* Background Animations */}
+      {/* Background Animation */}
       <div className="absolute inset-0 w-full h-full pointer-events-none">
-        <Galaxy
-          mouseInteraction={true}
-          mouseRepulsion={false}
-          density={0.3}
-          glowIntensity={0.1}
-          saturation={0}
-          hueShift={140}
-          twinkleIntensity={0.2}
-          rotationSpeed={0.1}
-          repulsionStrength={2}
-          autoCenterRepulsion={0}
-          starSpeed={0.5}
-          speed={1}
-          transparent={true}
+        <Orb
+          hue={0}
+          hoverIntensity={0.5}
+          rotateOnHover={true}
+          forceHoverState={false}
           className="opacity-40"
         />
-        <div className="absolute inset-0 w-full h-full">
-          <Orb
-            hue={0}
-            hoverIntensity={0.5}
-            rotateOnHover={true}
-            forceHoverState={false}
-            className="opacity-50"
-          />
-        </div>
       </div>
 
       {/* Content */}
