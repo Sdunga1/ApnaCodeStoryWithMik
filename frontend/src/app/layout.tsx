@@ -4,9 +4,9 @@ import '@/styles/globals.css';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'codestorywithMIK - DSA Problem Roadmap',
+  title: 'ApnaCodestorywithMik - Story to Code',
   description:
-    'Master Data Structures & Algorithms with codestorywithMIK. Daily LeetCode problems, practice roadmap, and coding solutions.',
+    'Master Data Structures & Algorithms with ApnaCodestorywithMik. Daily LeetCode problems, practice roadmap, and coding solutions.',
   keywords: [
     'DSA',
     'LeetCode',

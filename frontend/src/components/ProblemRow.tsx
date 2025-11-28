@@ -14,6 +14,7 @@ type ProblemRowProps = {
   onEdit?: () => void;
   canEdit?: boolean;
   onDelete?: () => void;
+  showStatus?: boolean;
 } & Omit<React.ComponentProps<'div'>, 'children'>;
 
 export function ProblemRow({
@@ -22,6 +23,7 @@ export function ProblemRow({
   onEdit,
   canEdit = false,
   onDelete,
+  showStatus = true,
   ...props
 }: ProblemRowProps) {
   const [isCompleted, setIsCompleted] = useState(false);
@@ -51,24 +53,26 @@ export function ProblemRow({
       {/* Desktop Layout */}
       <div className="hidden md:grid md:grid-cols-12 gap-4 px-6 py-4 items-center">
         {/* Status */}
-        <div className="col-span-1 flex justify-center">
-          <button
-            onClick={() => setIsCompleted(!isCompleted)}
-            className="transition-all hover:scale-110"
-          >
-            {isCompleted ? (
-              <CheckCircle2 className="w-6 h-6 text-emerald-400" />
-            ) : (
-              <Circle
-                className={`w-6 h-6 ${
-                  theme === 'dark'
-                    ? 'text-slate-600 hover:text-slate-500'
-                    : 'text-slate-400 hover:text-slate-500'
-                }`}
-              />
-            )}
-          </button>
-        </div>
+        {showStatus && (
+          <div className="col-span-1 flex justify-center">
+            <button
+              onClick={() => setIsCompleted(!isCompleted)}
+              className="transition-all hover:scale-110"
+            >
+              {isCompleted ? (
+                <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+              ) : (
+                <Circle
+                  className={`w-6 h-6 ${
+                    theme === 'dark'
+                      ? 'text-slate-600 hover:text-slate-500'
+                      : 'text-slate-400 hover:text-slate-500'
+                  }`}
+                />
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Star */}
         <div className="col-span-1 flex justify-center">
@@ -89,7 +93,7 @@ export function ProblemRow({
         </div>
 
         {/* Problem Title */}
-        <div className="col-span-5 lg:col-span-6">
+        <div className={showStatus ? 'col-span-5 lg:col-span-6' : 'col-span-6 lg:col-span-7'}>
           <a
             href={problem.leetcodeUrl}
             target="_blank"
@@ -168,20 +172,22 @@ export function ProblemRow({
         <div className="flex items-start gap-3">
           {/* Status and Star */}
           <div className="flex gap-2 mt-1">
-            <button
-              onClick={() => setIsCompleted(!isCompleted)}
-              className="transition-all hover:scale-110"
-            >
-              {isCompleted ? (
-                <CheckCircle2 className="w-6 h-6 text-emerald-400" />
-              ) : (
-                <Circle
-                  className={`w-6 h-6 ${
-                    theme === 'dark' ? 'text-slate-600' : 'text-slate-400'
-                  }`}
-                />
-              )}
-            </button>
+            {showStatus && (
+              <button
+                onClick={() => setIsCompleted(!isCompleted)}
+                className="transition-all hover:scale-110"
+              >
+                {isCompleted ? (
+                  <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                ) : (
+                  <Circle
+                    className={`w-6 h-6 ${
+                      theme === 'dark' ? 'text-slate-600' : 'text-slate-400'
+                    }`}
+                  />
+                )}
+              </button>
+            )}
             <button
               onClick={() => setIsStarred(!isStarred)}
               className="transition-all hover:scale-110"

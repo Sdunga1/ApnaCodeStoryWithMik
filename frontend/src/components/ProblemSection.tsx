@@ -268,7 +268,7 @@ export function ProblemSection({
           theme === 'dark' ? 'text-slate-500' : 'text-slate-600'
         }
       >
-        {completedCount} / {totalCount} Completed
+        {totalCount} Problems
       </p>
       {effectiveEditing && (
         <p className="mt-1 text-xs font-semibold text-purple-300">
@@ -282,7 +282,7 @@ export function ProblemSection({
         theme === 'dark' ? 'text-slate-500' : 'text-slate-600'
       }
     >
-      {totalCount} Problems
+      {completedCount} / {totalCount} Completed
     </p>
   );
 
@@ -416,11 +416,7 @@ export function ProblemSection({
                         : 'hover:bg-slate-200 text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    <ChevronsUpDown
-                      width={16}
-                      height={16}
-                      stroke={theme === 'dark' ? '#94a3b8' : '#475569'}
-                    />
+                    <Pencil className="w-3 h-3" />
                   </button>
                 )}
               </div>
@@ -496,6 +492,7 @@ export function ProblemSection({
                       problem={problem}
                       isEditing
                       canEdit
+                      showStatus={!canManage}
                       onEdit={() => setActiveForm({ mode: 'edit', problem })}
                       onDelete={onDeleteProblem ? () => onDeleteProblem(sectionId, problem.id) : undefined}
                     />
@@ -513,6 +510,7 @@ export function ProblemSection({
                 <ProblemRow
                   key={problem.id}
                   problem={problem}
+                  showStatus={!canManage}
                   onEdit={
                     canManage
                       ? () => {
