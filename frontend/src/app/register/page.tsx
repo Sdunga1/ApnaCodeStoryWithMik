@@ -66,7 +66,7 @@ export default function RegisterPage() {
     }
 
     setLoading(true);
-
+    
     try {
       const result = await register(name.trim(), email.trim(), password);
       if (result.success) {
