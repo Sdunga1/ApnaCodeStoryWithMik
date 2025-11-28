@@ -432,6 +432,71 @@ export default function Home() {
     [canManagePractice, newTopicIds]
   );
 
+  const handleTopicDelete = useCallback(
+    async (topicId: string) => {
+      if (!canManagePractice) return;
+      
+      if (!confirm('Are you sure you want to delete this topic? This will also delete all problems in this topic.')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/practice/topics/${topicId}`, {
+          method: 'DELETE',
+        });
+        const data = await response.json();
+        
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Unable to delete topic');
+        }
+        
+        setTopicSections(prev => prev.filter(topic => topic.id !== topicId));
+        setNewTopicIds(prev => {
+          const next = new Set(prev);
+          next.delete(topicId);
+          return next;
+        });
+      } catch (error: any) {
+        console.error('Failed to delete topic:', error);
+        alert(error?.message || 'Failed to delete topic');
+      }
+    },
+    [canManagePractice]
+  );
+
+  const handleProblemDelete = useCallback(
+    async (topicId: string, problemId: string) => {
+      if (!canManagePractice) return;
+      
+      if (!confirm('Are you sure you want to delete this problem?')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/practice/problems/${problemId}`, {
+          method: 'DELETE',
+        });
+        const data = await response.json();
+        
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Unable to delete problem');
+        }
+        
+        setTopicSections(prev =>
+          prev.map(topic =>
+            topic.id === topicId
+              ? { ...topic, problems: topic.problems.filter(p => p.id !== problemId) }
+              : topic
+          )
+        );
+      } catch (error: any) {
+        console.error('Failed to delete problem:', error);
+        alert(error?.message || 'Failed to delete problem');
+      }
+    },
+    [canManagePractice]
+  );
+
   return (
     <div
       className={`flex h-screen text-slate-100 ${
@@ -584,16 +649,6 @@ export default function Home() {
                 )}
             </div>
 
-              {isGlobalEditing && canManagePractice && (
-                <div className="mb-6 rounded-2xl border border-purple-500/40 bg-purple-500/10 px-4 py-3 text-sm text-purple-100 flex items-center gap-2">
-                  <span className="font-semibold uppercase tracking-wide text-xs">
-                    Topic reorder mode
-                  </span>
-                  <span className="text-purple-200">
-                    Drag & drop topic cards to rearrange your roadmap.
-                  </span>
-                </div>
-              )}
 
               {practiceLoading ? (
                 <div className="py-16 text-center text-slate-400">
@@ -640,11 +695,22 @@ export default function Home() {
                                   ? handleProblemUpdate
                                   : undefined
                               }
+                              onDeleteProblem={
+                                canManagePractice
+                                  ? handleProblemDelete
+                                  : undefined
+                              }
                               onStartEditing={handleSectionEditStart}
                               onStopEditing={handleSectionEditStop}
                               isNewTopic={newTopicIds.has(section.id)}
                               onTopicTitleSave={handleTopicTitleSave}
                               onTopicCancel={handleTopicCancel}
+                              onTopicDelete={
+                                canManagePractice
+                                  ? handleTopicDelete
+                                  : undefined
+                              }
+                              isReorderMode={true}
                             />
                           </Reorder.Item>
                         ))}
@@ -685,9 +751,19 @@ export default function Home() {
                                 ? handleProblemUpdate
                                 : undefined
                             }
+                            onDeleteProblem={
+                              canManagePractice
+                                ? handleProblemDelete
+                                : undefined
+                            }
                             isNewTopic={newTopicIds.has(section.id)}
                             onTopicTitleSave={handleTopicTitleSave}
                             onTopicCancel={handleTopicCancel}
+                            onTopicDelete={
+                              canManagePractice
+                                ? handleTopicDelete
+                                : undefined
+                            }
                           />
                         );
                       })

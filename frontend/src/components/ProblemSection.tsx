@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { ChevronDown, Plus, Pencil, Check, X } from 'lucide-react';
+import { ChevronDown, Plus, Pencil, Check, X, GripVertical } from 'lucide-react';
 import { Reorder } from 'framer-motion';
 import { ProblemRow } from './ProblemRow';
 import { PracticeProblemForm } from './PracticeProblemForm';
 import { useTheme } from '../contexts/ThemeContext';
 import { Input } from './ui/input';
 import { toast } from 'sonner';
+import { ChevronsUpDown } from './icons/ChevronsUpDown';
+import { Delete } from './ui/Delete';
 import type { PracticeProblem, PracticeProblemPayload } from '@/types/practice';
 
 type ProblemSectionProps = {
@@ -30,9 +32,12 @@ type ProblemSectionProps = {
     problemId: string,
     payload: PracticeProblemPayload
   ) => Promise<void>;
+  onDeleteProblem?: (topicId: string, problemId: string) => Promise<void>;
   isNewTopic?: boolean;
   onTopicTitleSave?: (topicId: string, newTitle: string) => Promise<void>;
   onTopicCancel?: (topicId: string) => void;
+  isReorderMode?: boolean;
+  onTopicDelete?: (topicId: string) => Promise<void>;
 } & Omit<React.ComponentProps<'div'>, 'children'>;
 
 export function ProblemSection({
@@ -48,9 +53,12 @@ export function ProblemSection({
   canManage = false,
   onAddProblem,
   onUpdateProblem,
+  onDeleteProblem,
   isNewTopic = false,
   onTopicTitleSave,
   onTopicCancel,
+  isReorderMode = false,
+  onTopicDelete,
   ...props
 }: ProblemSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -127,8 +135,8 @@ export function ProblemSection({
     'inline-flex items-center justify-center rounded-2xl p-2.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed';
   const addButtonClasses =
     theme === 'dark'
-      ? `${baseActionButtonClasses} text-slate-100 border border-white/15 bg-white/5 hover:bg-white/10`
-      : `${baseActionButtonClasses} text-slate-900 border border-slate-200 bg-white hover:bg-slate-50`;
+      ? `${baseActionButtonClasses} text-white border border-purple-500/40 bg-gradient-to-br from-purple-500/20 to-violet-600/20 hover:from-purple-500/30 hover:to-violet-600/30 shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30`
+      : `${baseActionButtonClasses} text-white border border-purple-500/40 bg-gradient-to-br from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/40`;
   const editButtonClasses =
     theme === 'dark'
       ? `${baseActionButtonClasses} text-white/80 bg-white/6 border border-white/10 hover:text-white`
@@ -214,11 +222,37 @@ export function ProblemSection({
           </>
         ) : (
           <>
-            <Pencil className="w-4 h-4 text-rose-400" />
+            <ChevronsUpDown
+              width={16}
+              height={16}
+              stroke={theme === 'dark' ? '#fbbf24' : '#d97706'}
+            />
             <span className="sr-only">Edit</span>
           </>
         )}
       </button>
+      {onTopicDelete && (
+        <button
+          type="button"
+          className={editButtonClasses}
+          aria-label={`Delete ${title}`}
+          onClick={async (e) => {
+            e.stopPropagation();
+            if (onTopicDelete) {
+              await onTopicDelete(sectionId);
+            }
+          }}
+          disabled={editingDisabled && !effectiveEditing}
+        >
+          <Delete
+            width={16}
+            height={16}
+            stroke={theme === 'dark' ? '#ef4444' : '#dc2626'}
+            noPadding={true}
+          />
+          <span className="sr-only">Delete topic</span>
+        </button>
+      )}
       {editingDisabled && !effectiveEditing && (
         <span className="text-xs text-amber-400">
           Clear search to edit
@@ -270,6 +304,13 @@ export function ProblemSection({
           } ${editingBanner ?? ''}`}
         >
           <div className="flex items-center gap-4 flex-1">
+            {isReorderMode && (
+              <GripVertical
+                className={`w-5 h-5 flex-shrink-0 ${
+                  theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                } cursor-grab active:cursor-grabbing`}
+              />
+            )}
             <ChevronDown
               className={`w-5 h-5 transition-transform ${
                 theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
@@ -343,6 +384,13 @@ export function ProblemSection({
           } ${editingBanner ?? ''}`}
         >
           <div className="flex items-center gap-4 flex-1">
+            {isReorderMode && (
+              <GripVertical
+                className={`w-5 h-5 flex-shrink-0 ${
+                  theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                } cursor-grab active:cursor-grabbing`}
+              />
+            )}
             <ChevronDown
               className={`w-5 h-5 transition-transform ${
                 theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
@@ -368,7 +416,11 @@ export function ProblemSection({
                         : 'hover:bg-slate-200 text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    <Pencil className="w-3 h-3" />
+                    <ChevronsUpDown
+                      width={16}
+                      height={16}
+                      stroke={theme === 'dark' ? '#94a3b8' : '#475569'}
+                    />
                   </button>
                 )}
               </div>
@@ -445,6 +497,7 @@ export function ProblemSection({
                       isEditing
                       canEdit
                       onEdit={() => setActiveForm({ mode: 'edit', problem })}
+                      onDelete={onDeleteProblem ? () => onDeleteProblem(sectionId, problem.id) : undefined}
                     />
                   </Reorder.Item>
                 ))}
@@ -470,6 +523,7 @@ export function ProblemSection({
                       : undefined
                   }
                   canEdit={canManage && !editingDisabled}
+                  onDelete={onDeleteProblem ? () => onDeleteProblem(sectionId, problem.id) : undefined}
                 />
               ))}
             </div>

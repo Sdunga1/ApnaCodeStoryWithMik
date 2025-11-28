@@ -5,6 +5,7 @@ import { CheckCircle2, Circle, Star, Video, Pencil } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { useState } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
+import { Delete } from './ui/Delete';
 import type { PracticeProblem } from '@/types/practice';
 
 type ProblemRowProps = {
@@ -12,6 +13,7 @@ type ProblemRowProps = {
   isEditing?: boolean;
   onEdit?: () => void;
   canEdit?: boolean;
+  onDelete?: () => void;
 } & Omit<React.ComponentProps<'div'>, 'children'>;
 
 export function ProblemRow({
@@ -19,6 +21,7 @@ export function ProblemRow({
   isEditing = false,
   onEdit,
   canEdit = false,
+  onDelete,
   ...props
 }: ProblemRowProps) {
   const [isCompleted, setIsCompleted] = useState(false);
@@ -109,7 +112,7 @@ export function ProblemRow({
           </Badge>
         </div>
 
-        {/* Solution & Edit */}
+        {/* Solution & Edit & Delete */}
         <div className="col-span-3 lg:col-span-2 flex justify-center gap-2">
           {problem.solutionVideoUrl && (
             <a
@@ -127,14 +130,34 @@ export function ProblemRow({
               type="button"
               onClick={onEdit}
               disabled={!canEdit}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-semibold transition ${
+              className={`p-2 rounded-lg border transition ${
                 canEdit
                   ? 'border-purple-500/40 text-purple-200 hover:bg-purple-500/10'
                   : 'border-slate-700 text-slate-600 cursor-not-allowed'
               }`}
+              aria-label="Edit problem"
             >
               <Pencil className="w-4 h-4" />
-              Edit
+            </button>
+          )}
+          {onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={!canEdit}
+              className={`p-2 rounded-lg border transition ${
+                canEdit
+                  ? 'border-red-500/40 text-red-400 hover:bg-red-500/10'
+                  : 'border-slate-700 text-slate-600 cursor-not-allowed'
+              }`}
+              aria-label="Delete problem"
+            >
+              <Delete
+                width={16}
+                height={16}
+                stroke={theme === 'dark' ? '#ef4444' : '#dc2626'}
+                noPadding={true}
+              />
             </button>
           )}
         </div>
@@ -210,14 +233,34 @@ export function ProblemRow({
                   type="button"
                   onClick={onEdit}
                   disabled={!canEdit}
-                  className={`flex items-center gap-1 px-3 py-1 rounded-lg border text-xs font-semibold ${
+                  className={`p-2 rounded-lg border ${
                     canEdit
                       ? 'border-purple-500/40 text-purple-200'
                       : 'border-slate-700 text-slate-600 cursor-not-allowed'
                   }`}
+                  aria-label="Edit problem"
                 >
                   <Pencil className="w-4 h-4" />
-                  Edit
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={onDelete}
+                  disabled={!canEdit}
+                  className={`p-2 rounded-lg border ${
+                    canEdit
+                      ? 'border-red-500/40 text-red-400'
+                      : 'border-slate-700 text-slate-600 cursor-not-allowed'
+                  }`}
+                  aria-label="Delete problem"
+                >
+                  <Delete
+                    width={16}
+                    height={16}
+                    stroke={theme === 'dark' ? '#ef4444' : '#dc2626'}
+                    noPadding={true}
+                  />
                 </button>
               )}
             </div>
