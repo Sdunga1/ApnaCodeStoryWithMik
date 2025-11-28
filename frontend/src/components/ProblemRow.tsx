@@ -5,7 +5,10 @@ import { CheckCircle2, Circle, Star, Video, Pencil } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { useState } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Delete } from './ui/Delete';
+import { getStoredToken } from '@/lib/api';
+import { toast } from 'sonner';
 import type { PracticeProblem } from '@/types/practice';
 
 type ProblemRowProps = {
@@ -15,6 +18,8 @@ type ProblemRowProps = {
   canEdit?: boolean;
   onDelete?: () => void;
   showStatus?: boolean;
+  onCompletionChange?: (problemId: string, isCompleted: boolean) => void;
+  onStarChange?: (problemId: string, isStarred: boolean) => void;
 } & Omit<React.ComponentProps<'div'>, 'children'>;
 
 export function ProblemRow({
@@ -24,11 +29,115 @@ export function ProblemRow({
   canEdit = false,
   onDelete,
   showStatus = true,
+  onCompletionChange,
+  onStarChange,
   ...props
 }: ProblemRowProps) {
-  const [isCompleted, setIsCompleted] = useState(false);
-  const [isStarred, setIsStarred] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(problem.isCompleted ?? false);
+  const [isToggling, setIsToggling] = useState(false);
+  const [isStarred, setIsStarred] = useState(problem.isStarred ?? false);
+  const [isStarring, setIsStarring] = useState(false);
   const { theme } = useTheme();
+  const { isAuthenticated } = useAuth();
+
+  // Sync with prop changes
+  React.useEffect(() => {
+    setIsCompleted(problem.isCompleted ?? false);
+  }, [problem.isCompleted]);
+
+  React.useEffect(() => {
+    setIsStarred(problem.isStarred ?? false);
+  }, [problem.isStarred]);
+
+  const handleCompletionToggle = async () => {
+    // Only allow toggling if user is authenticated and status is shown (not in edit mode)
+    if (!isAuthenticated || !showStatus || isToggling || canEdit) {
+      return;
+    }
+
+    setIsToggling(true);
+    const token = getStoredToken();
+    
+    if (!token) {
+      toast.error('Please login to mark problems as completed');
+      setIsToggling(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/practice/problems/${problem.id}/completion`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Failed to update completion status');
+      }
+
+      const newCompletedState = data.isCompleted;
+      setIsCompleted(newCompletedState);
+      
+      // Notify parent component to refresh data
+      if (onCompletionChange) {
+        onCompletionChange(problem.id, newCompletedState);
+      }
+    } catch (error: any) {
+      console.error('Error toggling completion:', error);
+      toast.error(error?.message || 'Failed to update completion status');
+    } finally {
+      setIsToggling(false);
+    }
+  };
+
+  const handleStarToggle = async () => {
+    // Only allow toggling if user is authenticated
+    if (!isAuthenticated || isStarring || canEdit) {
+      return;
+    }
+
+    setIsStarring(true);
+    const token = getStoredToken();
+    
+    if (!token) {
+      toast.error('Please login to star problems');
+      setIsStarring(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/practice/problems/${problem.id}/star`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Failed to update star status');
+      }
+
+      const newStarredState = data.isStarred;
+      setIsStarred(newStarredState);
+      
+      // Notify parent component to refresh data
+      if (onStarChange) {
+        onStarChange(problem.id, newStarredState);
+      }
+    } catch (error: any) {
+      console.error('Error toggling star:', error);
+      toast.error(error?.message || 'Failed to update star status');
+    } finally {
+      setIsStarring(false);
+    }
+  };
 
   const difficultyConfig = {
     Easy: {
@@ -56,8 +165,9 @@ export function ProblemRow({
         {showStatus && (
           <div className="col-span-1 flex justify-center">
             <button
-              onClick={() => setIsCompleted(!isCompleted)}
-              className="transition-all hover:scale-110"
+              onClick={handleCompletionToggle}
+              disabled={isToggling || canEdit || !isAuthenticated}
+              className="transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isCompleted ? (
                 <CheckCircle2 className="w-6 h-6 text-emerald-400" />
@@ -77,8 +187,9 @@ export function ProblemRow({
         {/* Star */}
         <div className="col-span-1 flex justify-center">
           <button
-            onClick={() => setIsStarred(!isStarred)}
-            className="transition-all hover:scale-110"
+            onClick={handleStarToggle}
+            disabled={isStarring || canEdit || !isAuthenticated}
+            className="transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Star
               className={`w-5 h-5 ${
@@ -174,8 +285,9 @@ export function ProblemRow({
           <div className="flex gap-2 mt-1">
             {showStatus && (
               <button
-                onClick={() => setIsCompleted(!isCompleted)}
-                className="transition-all hover:scale-110"
+                onClick={handleCompletionToggle}
+                disabled={isToggling || canEdit || !isAuthenticated}
+                className="transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isCompleted ? (
                   <CheckCircle2 className="w-6 h-6 text-emerald-400" />
@@ -189,8 +301,9 @@ export function ProblemRow({
               </button>
             )}
             <button
-              onClick={() => setIsStarred(!isStarred)}
-              className="transition-all hover:scale-110"
+              onClick={handleStarToggle}
+              disabled={isStarring || canEdit || !isAuthenticated}
+              className="transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Star
                 className={`w-5 h-5 ${

@@ -86,10 +86,37 @@ export default function Home() {
     { easy: 0, medium: 0, hard: 0 }
   );
 
-  const completedProblems = 0;
-  const easyCompleted = 0;
-  const mediumCompleted = 0;
-  const hardCompleted = 0;
+  const completedProblems = topicSections.reduce(
+    (acc, section) =>
+      acc +
+      section.problems.filter(problem => problem.isCompleted === true).length,
+    0
+  );
+  const easyCompleted = topicSections.reduce(
+    (acc, section) =>
+      acc +
+      section.problems.filter(
+        problem => problem.isCompleted === true && problem.difficulty === 'Easy'
+      ).length,
+    0
+  );
+  const mediumCompleted = topicSections.reduce(
+    (acc, section) =>
+      acc +
+      section.problems.filter(
+        problem =>
+          problem.isCompleted === true && problem.difficulty === 'Medium'
+      ).length,
+    0
+  );
+  const hardCompleted = topicSections.reduce(
+    (acc, section) =>
+      acc +
+      section.problems.filter(
+        problem => problem.isCompleted === true && problem.difficulty === 'Hard'
+      ).length,
+    0
+  );
   const easyTotal = difficultyTotals.easy;
   const mediumTotal = difficultyTotals.medium;
   const hardTotal = difficultyTotals.hard;
@@ -113,7 +140,17 @@ export default function Home() {
   const fetchPracticeData = useCallback(async () => {
     setPracticeLoading(true);
     try {
-      const response = await fetch('/api/practice');
+      const token = localStorage.getItem('auth_token');
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch('/api/practice', {
+        headers,
+      });
       const data = await response.json();
       if (!response.ok || !data.success) {
         throw new Error(data.message || 'Unable to load practice roadmap');
@@ -130,7 +167,48 @@ export default function Home() {
 
   useEffect(() => {
     fetchPracticeData();
-  }, [fetchPracticeData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Refresh practice data when auth state changes
+  useEffect(() => {
+    fetchPracticeData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
+
+  const handleProblemCompletionChange = useCallback(
+    (problemId: string, isCompleted: boolean) => {
+      // Update the problem's completion status in state
+      setTopicSections(prev =>
+        prev.map(section => ({
+          ...section,
+          problems: section.problems.map(problem =>
+            problem.id === problemId
+              ? { ...problem, isCompleted }
+              : problem
+          ),
+        }))
+      );
+    },
+    []
+  );
+
+  const handleProblemStarChange = useCallback(
+    (problemId: string, isStarred: boolean) => {
+      // Update the problem's star status in state
+      setTopicSections(prev =>
+        prev.map(section => ({
+          ...section,
+          problems: section.problems.map(problem =>
+            problem.id === problemId
+              ? { ...problem, isStarred }
+              : problem
+          ),
+        }))
+      );
+    },
+    []
+  );
 
   useEffect(() => {
     if (!canManagePractice) {
@@ -711,6 +789,8 @@ export default function Home() {
                                   : undefined
                               }
                               isReorderMode={true}
+                              onCompletionChange={handleProblemCompletionChange}
+                              onStarChange={handleProblemStarChange}
                             />
                           </Reorder.Item>
                         ))}
@@ -764,6 +844,8 @@ export default function Home() {
                                 ? handleTopicDelete
                                 : undefined
                             }
+                            onCompletionChange={handleProblemCompletionChange}
+                            onStarChange={handleProblemStarChange}
                           />
                         );
                       })

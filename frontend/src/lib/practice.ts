@@ -1,18 +1,20 @@
-import { getClient, query } from './db';
+import { getClient, query, getPool } from './db';
 import type { PracticeProblem, PracticeTopic, PracticeProblemPayload, PracticeTopicPayload } from '@/types/practice';
 
 const difficultySet = new Set(['Easy', 'Medium', 'Hard']);
 
-const mapProblemRow = (row: any): PracticeProblem => ({
+const mapProblemRow = (row: any, isCompleted: boolean = false, isStarred: boolean = false): PracticeProblem => ({
   id: row.id,
   title: row.title,
   difficulty: row.difficulty,
   leetcodeUrl: row.leetcode_url,
   solutionVideoUrl: row.solution_video_url,
   position: row.position,
+  isCompleted,
+  isStarred,
 });
 
-export async function getPracticeTopicsWithProblems(): Promise<PracticeTopic[]> {
+export async function getPracticeTopicsWithProblems(userId?: string): Promise<PracticeTopic[]> {
   const topicsRes = await query(
     `SELECT id, title, position
      FROM practice_topics
@@ -25,10 +27,49 @@ export async function getPracticeTopicsWithProblems(): Promise<PracticeTopic[]> 
      ORDER BY topic_id ASC, position ASC, created_at ASC`
   );
 
+  // Get completion and starred status if userId is provided
+  let completedProblemIds = new Set<string>();
+  let starredProblemIds = new Set<string>();
+  if (userId) {
+    const pool = getPool();
+    
+    // Get completion status
+    try {
+      const completionRes = await pool.query(
+        `SELECT problem_id
+         FROM user_practice_completion
+         WHERE user_id = $1`,
+        [userId]
+      );
+      completedProblemIds = new Set(completionRes.rows.map((row: any) => row.problem_id));
+    } catch (error: any) {
+      // Silently ignore missing table errors
+      if (error?.code !== '42P01') {
+        console.error('Error fetching completion status:', error);
+      }
+    }
+    
+    // Get starred status
+    try {
+      const starredRes = await pool.query(
+        `SELECT problem_id
+         FROM user_practice_stars
+         WHERE user_id = $1`,
+        [userId]
+      );
+      starredProblemIds = new Set(starredRes.rows.map((row: any) => row.problem_id));
+    } catch (error: any) {
+      // Silently ignore missing table errors
+      if (error?.code !== '42P01') {
+        console.error('Error fetching starred status:', error);
+      }
+    }
+  }
+
   const problemsByTopic = new Map<string, PracticeProblem[]>();
   for (const row of problemsRes.rows) {
     const list = problemsByTopic.get(row.topic_id) ?? [];
-    list.push(mapProblemRow(row));
+    list.push(mapProblemRow(row, completedProblemIds.has(row.id), starredProblemIds.has(row.id)));
     problemsByTopic.set(row.topic_id, list);
   }
 
@@ -208,4 +249,120 @@ export async function deletePracticeProblem(problemId: string): Promise<void> {
   }
 }
 
+/**
+ * Toggle problem completion status for a user
+ */
+export async function toggleProblemCompletion(
+  userId: string,
+  problemId: string
+): Promise<boolean> {
+  try {
+    // Check if completion exists
+    const existing = await query(
+      `SELECT id FROM user_practice_completion
+       WHERE user_id = $1 AND problem_id = $2`,
+      [userId, problemId]
+    );
+
+    if (existing.rows.length > 0) {
+      // Delete completion (mark as incomplete)
+      await query(
+        `DELETE FROM user_practice_completion
+         WHERE user_id = $1 AND problem_id = $2`,
+        [userId, problemId]
+      );
+      return false;
+    } else {
+      // Insert completion (mark as complete)
+      await query(
+        `INSERT INTO user_practice_completion (user_id, problem_id)
+         VALUES ($1, $2)`,
+        [userId, problemId]
+      );
+      return true;
+    }
+  } catch (error: any) {
+    if (error?.code === '42P01') {
+      throw new Error('Completion tracking is not available. Please run database migration 011_add_user_practice_completion.sql');
+    }
+    throw error;
+  }
+}
+
+/**
+ * Get completion status for a problem
+ */
+export async function getProblemCompletionStatus(
+  userId: string,
+  problemId: string
+): Promise<boolean> {
+  const result = await query(
+    `SELECT id FROM user_practice_completion
+     WHERE user_id = $1 AND problem_id = $2`,
+    [userId, problemId]
+  );
+  return result.rows.length > 0;
+}
+
+/**
+ * Toggle problem star status for a user
+ */
+export async function toggleProblemStar(
+  userId: string,
+  problemId: string
+): Promise<boolean> {
+  try {
+    // Check if star exists
+    const existing = await query(
+      `SELECT id FROM user_practice_stars
+       WHERE user_id = $1 AND problem_id = $2`,
+      [userId, problemId]
+    );
+
+    if (existing.rows.length > 0) {
+      // Delete star (unstar)
+      await query(
+        `DELETE FROM user_practice_stars
+         WHERE user_id = $1 AND problem_id = $2`,
+        [userId, problemId]
+      );
+      return false;
+    } else {
+      // Insert star
+      await query(
+        `INSERT INTO user_practice_stars (user_id, problem_id)
+         VALUES ($1, $2)`,
+        [userId, problemId]
+      );
+      return true;
+    }
+  } catch (error: any) {
+    if (error?.code === '42P01') {
+      throw new Error('Star tracking is not available. Please run database migration 012_add_user_practice_stars.sql');
+    }
+    throw error;
+  }
+}
+
+/**
+ * Get star status for a problem
+ */
+export async function getProblemStarStatus(
+  userId: string,
+  problemId: string
+): Promise<boolean> {
+  try {
+    const result = await query(
+      `SELECT id FROM user_practice_stars
+       WHERE user_id = $1 AND problem_id = $2`,
+      [userId, problemId]
+    );
+    return result.rows.length > 0;
+  } catch (error: any) {
+    if (error?.code === '42P01') {
+      return false;
+    }
+    throw error;
+  }
+}
 
