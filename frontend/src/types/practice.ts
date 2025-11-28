@@ -7,6 +7,8 @@ export interface PracticeProblem {
   leetcodeUrl: string;
   solutionVideoUrl?: string | null;
   position: number;
+  isCompleted?: boolean;
+  isStarred?: boolean;
 }
 
 export interface PracticeTopic {

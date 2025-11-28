@@ -38,6 +38,8 @@ type ProblemSectionProps = {
   onTopicCancel?: (topicId: string) => void;
   isReorderMode?: boolean;
   onTopicDelete?: (topicId: string) => Promise<void>;
+  onCompletionChange?: (problemId: string, isCompleted: boolean) => void;
+  onStarChange?: (problemId: string, isStarred: boolean) => void;
 } & Omit<React.ComponentProps<'div'>, 'children'>;
 
 export function ProblemSection({
@@ -59,6 +61,8 @@ export function ProblemSection({
   onTopicCancel,
   isReorderMode = false,
   onTopicDelete,
+  onCompletionChange,
+  onStarChange,
   ...props
 }: ProblemSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -129,8 +133,11 @@ export function ProblemSection({
   };
 
   const totalCount = localProblems.length;
-  const completedCount = 0;
-  const progressPercentage = 0;
+  const completedCount = localProblems.filter(
+    problem => problem.isCompleted === true
+  ).length;
+  const progressPercentage =
+    totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
   const baseActionButtonClasses =
     'inline-flex items-center justify-center rounded-2xl p-2.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed';
   const addButtonClasses =
@@ -495,6 +502,8 @@ export function ProblemSection({
                       showStatus={!canManage}
                       onEdit={() => setActiveForm({ mode: 'edit', problem })}
                       onDelete={onDeleteProblem ? () => onDeleteProblem(sectionId, problem.id) : undefined}
+                      onCompletionChange={onCompletionChange}
+                      onStarChange={onStarChange}
                     />
                   </Reorder.Item>
                 ))}
@@ -522,6 +531,8 @@ export function ProblemSection({
                   }
                   canEdit={canManage && !editingDisabled}
                   onDelete={onDeleteProblem ? () => onDeleteProblem(sectionId, problem.id) : undefined}
+                  onCompletionChange={onCompletionChange}
+                  onStarChange={onStarChange}
                 />
               ))}
             </div>
