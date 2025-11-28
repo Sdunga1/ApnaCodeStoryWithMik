@@ -1,5 +1,5 @@
 import { getClient, query } from './db';
-import type { PracticeProblem, PracticeTopic, PracticeProblemPayload } from '@/types/practice';
+import type { PracticeProblem, PracticeTopic, PracticeProblemPayload, PracticeTopicPayload } from '@/types/practice';
 
 const difficultySet = new Set(['Easy', 'Medium', 'Hard']);
 
@@ -134,6 +134,58 @@ export async function reorderPracticeTopics(orderedIds: string[]) {
   } finally {
     client.release();
   }
+}
+
+export async function createPracticeTopic(
+  payload: PracticeTopicPayload
+): Promise<PracticeTopic> {
+  if (!payload.title?.trim()) {
+    throw new Error('Topic title is required');
+  }
+  const { rows } = await query(
+    `INSERT INTO practice_topics (title, position)
+     VALUES (
+       $1,
+       COALESCE((SELECT MAX(position) FROM practice_topics), 0) + 1
+     )
+     RETURNING id, title, position`,
+    [payload.title.trim()]
+  );
+  if (!rows[0]) {
+    throw new Error('Failed to insert practice topic');
+  }
+  return {
+    id: rows[0].id,
+    title: rows[0].title,
+    position: rows[0].position,
+    problems: [],
+  };
+}
+
+export async function updatePracticeTopic(
+  topicId: string,
+  payload: PracticeTopicPayload
+): Promise<PracticeTopic> {
+  if (!payload.title?.trim()) {
+    throw new Error('Topic title is required');
+  }
+  const { rows } = await query(
+    `UPDATE practice_topics
+     SET title = $2,
+         updated_at = NOW()
+     WHERE id = $1
+     RETURNING id, title, position`,
+    [topicId, payload.title.trim()]
+  );
+  if (!rows[0]) {
+    throw new Error('Practice topic not found');
+  }
+  return {
+    id: rows[0].id,
+    title: rows[0].title,
+    position: rows[0].position,
+    problems: [],
+  };
 }
 
 

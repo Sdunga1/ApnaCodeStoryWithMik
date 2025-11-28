@@ -17,6 +17,7 @@ import type {
   PracticeTopic,
   PracticeProblem,
   PracticeProblemPayload,
+  PracticeTopicPayload,
 } from '@/types/practice';
 
 const sortProblems = (problems: PracticeProblem[] = []) =>
@@ -51,6 +52,7 @@ export default function Home() {
   const [isGlobalEditing, setIsGlobalEditing] = useState(false);
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [topicOrderDirty, setTopicOrderDirty] = useState(false);
+  const [newTopicIds, setNewTopicIds] = useState<Set<string>>(new Set());
   const { theme } = useTheme();
   const { user, isAuthenticated } = useAuth();
   const canManagePractice = isAuthenticated && user?.role === 'creator';
@@ -321,6 +323,115 @@ export default function Home() {
     [canManagePractice, persistProblemOrder]
   );
 
+  const handleAddTopic = useCallback(() => {
+    if (!canManagePractice) return;
+    
+    // Create a temporary topic with a temporary ID
+    const tempId = `temp-${Date.now()}`;
+    const newTopic: PracticeTopic = {
+      id: tempId,
+      title: '',
+      position: topicSections.length + 1,
+      problems: [],
+    };
+    
+    setTopicSections(prev => [newTopic, ...prev]);
+    setNewTopicIds(prev => new Set(prev).add(tempId));
+  }, [canManagePractice, topicSections.length]);
+
+  const handleTopicTitleSave = useCallback(
+    async (topicId: string, newTitle: string) => {
+      if (!canManagePractice) {
+        console.error('User does not have permission to manage practice');
+        throw new Error('Not authorized to edit topics');
+      }
+      
+      const isNewTopic = newTopicIds.has(topicId);
+      
+      console.log('Saving topic:', { topicId, newTitle, isNewTopic });
+      
+      try {
+        if (isNewTopic) {
+          // Create new topic
+          console.log('Creating new topic...');
+          const response = await fetch('/api/practice/topics', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: newTitle }),
+          });
+          const data = await response.json();
+          
+          console.log('Create topic response:', { status: response.status, data });
+          
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Unable to create topic');
+          }
+          
+          // Replace temporary topic with the real one
+          setTopicSections(prev =>
+            prev.map(topic =>
+              topic.id === topicId
+                ? { ...data.topic, problems: [] }
+                : topic
+            )
+          );
+          setNewTopicIds(prev => {
+            const next = new Set(prev);
+            next.delete(topicId);
+            return next;
+          });
+        } else {
+          // Update existing topic
+          console.log('Updating existing topic...');
+          const response = await fetch(`/api/practice/topics/${topicId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: newTitle }),
+          });
+          const data = await response.json();
+          
+          console.log('Update topic response:', { status: response.status, data });
+          
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Unable to update topic');
+          }
+          
+          // Update the topic title in state
+          setTopicSections(prev =>
+            prev.map(topic =>
+              topic.id === topicId
+                ? { ...topic, title: data.topic.title }
+                : topic
+            )
+          );
+        }
+      } catch (error: any) {
+        console.error('Failed to save topic:', error);
+        throw error;
+      }
+    },
+    [canManagePractice, newTopicIds]
+  );
+
+  const handleTopicCancel = useCallback(
+    (topicId: string) => {
+      if (!canManagePractice) return;
+      
+      const isNewTopic = newTopicIds.has(topicId);
+      
+      if (isNewTopic) {
+        // Remove the temporary topic
+        setTopicSections(prev => prev.filter(topic => topic.id !== topicId));
+        setNewTopicIds(prev => {
+          const next = new Set(prev);
+          next.delete(topicId);
+          return next;
+        });
+      }
+    },
+    [canManagePractice, newTopicIds]
+  );
+
   return (
     <div
       className={`flex h-screen text-slate-100 ${
@@ -430,7 +541,9 @@ export default function Home() {
                     <div className="flex flex-wrap items-center justify-end gap-3">
                       <button
                         type="button"
+                        onClick={handleAddTopic}
                         className={primaryActionButtonClasses}
+                        disabled={isFiltering || isGlobalEditing}
                       >
                         <Plus className="w-4 h-4" />
                         Add Topic
@@ -529,6 +642,9 @@ export default function Home() {
                               }
                               onStartEditing={handleSectionEditStart}
                               onStopEditing={handleSectionEditStop}
+                              isNewTopic={newTopicIds.has(section.id)}
+                              onTopicTitleSave={handleTopicTitleSave}
+                              onTopicCancel={handleTopicCancel}
                             />
                           </Reorder.Item>
                         ))}
@@ -550,7 +666,7 @@ export default function Home() {
                             id={section.id}
                             title={section.title}
                             problems={section.problems}
-                            defaultOpen={index === 0}
+                            defaultOpen={index === 0 || newTopicIds.has(section.id)}
                             onProblemsReorder={updated =>
                               handleProblemsReorder(section.id, updated)
                             }
@@ -569,6 +685,9 @@ export default function Home() {
                                 ? handleProblemUpdate
                                 : undefined
                             }
+                            isNewTopic={newTopicIds.has(section.id)}
+                            onTopicTitleSave={handleTopicTitleSave}
+                            onTopicCancel={handleTopicCancel}
                           />
                         );
                       })
