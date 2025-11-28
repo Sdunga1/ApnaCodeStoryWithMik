@@ -6,6 +6,8 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Progress } from './ui/progress';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
+import ShinyText from './ShinyText';
+import TextType from './TextType';
 
 interface SidebarProps {
   completedProblems: number;
@@ -82,16 +84,22 @@ export function Sidebar({
         }`}
       >
         <div>
-          <h2
-            className={`mb-1 ${
-              theme === 'dark' ? 'text-purple-400' : 'text-purple-600'
-            }`}
-          >
-            codestorywithMIK
-          </h2>
-          <p className={theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}>
-            DSA Platform
-          </p>
+          <div className="mb-1">
+            <ShinyText text="ApnaCodestorywithMik" disabled={false} speed={3} />
+          </div>
+          <div className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+            <TextType
+              text="Lets learn </> and grow together.!!"
+              typingSpeed={100}
+              pauseDuration={1000}
+              deletingSpeed={50}
+              cursorBlinkDuration={0.4}
+              showCursor={true}
+              cursorCharacter="_"
+              loop={true}
+              as="p"
+            />
+          </div>
         </div>
       </div>
 

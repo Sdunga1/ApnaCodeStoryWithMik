@@ -19,12 +19,12 @@ const ShinyText: React.FC<ShinyTextProps> = ({
 
   return (
     <span
-      className={`text-[#b5b5b5a4] bg-clip-text inline-block ${
+      className={`text-purple-400 bg-clip-text inline-block ${
         disabled ? '' : 'animate-shine'
       } ${className}`}
       style={{
         backgroundImage:
-          'linear-gradient(120deg, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0) 60%)',
+          'linear-gradient(120deg, rgba(168, 85, 247, 0.4) 40%, rgba(255, 255, 255, 0.9) 50%, rgba(168, 85, 247, 0.4) 60%)',
         backgroundSize: '200% 100%',
         WebkitBackgroundClip: 'text',
         animationDuration: animationDuration,

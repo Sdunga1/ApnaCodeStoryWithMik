@@ -9,6 +9,7 @@ interface DeleteProps extends React.SVGAttributes<SVGSVGElement> {
   height?: number;
   strokeWidth?: number;
   stroke?: string;
+  noPadding?: boolean;
 }
 
 const lidVariants: Variants = {
@@ -27,6 +28,7 @@ const Delete = ({
   height = 28,
   strokeWidth = 2,
   stroke = "#ffffff",
+  noPadding = false,
   ...props
 }: DeleteProps) => {
   const controls = useAnimation();
@@ -36,7 +38,7 @@ const Delete = ({
       style={{
         cursor: "pointer",
         userSelect: "none",
-        padding: "8px",
+        padding: noPadding ? "0" : "8px",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

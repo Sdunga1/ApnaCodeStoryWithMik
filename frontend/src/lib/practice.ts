@@ -188,4 +188,24 @@ export async function updatePracticeTopic(
   };
 }
 
+export async function deletePracticeTopic(topicId: string): Promise<void> {
+  const { rowCount } = await query(
+    `DELETE FROM practice_topics WHERE id = $1`,
+    [topicId]
+  );
+  if (rowCount === 0) {
+    throw new Error('Practice topic not found');
+  }
+}
+
+export async function deletePracticeProblem(problemId: string): Promise<void> {
+  const { rowCount } = await query(
+    `DELETE FROM practice_problems WHERE id = $1`,
+    [problemId]
+  );
+  if (rowCount === 0) {
+    throw new Error('Practice problem not found');
+  }
+}
+
 
