@@ -368,36 +368,36 @@ export default function Home() {
           ) : activeView === 'create-post' ? (
             <CreatePostPage onPostComplete={handlePostComplete} />
           ) : activeView === 'practice' ? (
-            <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-              {/* Header */}
-              <div className="mb-8">
-                <h1
-                  className={`mb-2 ${
-                    theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
-                  }`}
-                >
-                  DSA Problem Roadmap
-                </h1>
-                <p
-                  className={
-                    theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
-                  }
-                >
-                  Master Data Structures & Algorithms with codestorywithMIK
-                </p>
-              </div>
+          <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+            {/* Header */}
+            <div className="mb-8">
+              <h1
+                className={`mb-2 ${
+                  theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
+                }`}
+              >
+                DSA Problem Roadmap
+              </h1>
+              <p
+                className={
+                  theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+                }
+              >
+                Master Data Structures & Algorithms with codestorywithMIK
+              </p>
+            </div>
 
-              {/* Stats Card */}
-              <StatsCard
-                total={completedProblems}
-                totalProblems={totalProblems}
-                easy={easyCompleted}
-                easyTotal={easyTotal}
-                medium={mediumCompleted}
-                mediumTotal={mediumTotal}
-                hard={hardCompleted}
-                hardTotal={hardTotal}
-              />
+            {/* Stats Card */}
+            <StatsCard
+              total={completedProblems}
+              totalProblems={totalProblems}
+              easy={easyCompleted}
+              easyTotal={easyTotal}
+              medium={mediumCompleted}
+              mediumTotal={mediumTotal}
+              hard={hardCompleted}
+              hardTotal={hardTotal}
+            />
 
               {practiceError && (
                 <div className="my-6 rounded-2xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
@@ -405,26 +405,26 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Search Bar */}
+            {/* Search Bar */}
               <div className="mb-8 space-y-4">
-                <div className="relative">
-                  <Search
-                    className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 ${
-                      theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
-                    }`}
-                  />
-                  <Input
-                    type="text"
-                    placeholder="Search problems by keyword or topic..."
+              <div className="relative">
+                <Search
+                  className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 ${
+                    theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+                  }`}
+                />
+                <Input
+                  type="text"
+                  placeholder="Search problems by keyword or topic..."
                     className={`pl-12 h-14 rounded-xl border transition-all focus:border-purple-400 focus:ring-purple-500/30 ${
-                      theme === 'dark'
+                    theme === 'dark'
                         ? 'bg-[#101729] border-white/10 text-slate-100 placeholder:text-slate-500'
                         : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-500'
-                    }`}
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                  />
-                </div>
+                  }`}
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                />
+              </div>
                 {canManagePractice && (
                   <>
                     <div className="flex flex-wrap items-center justify-end gap-3">
@@ -469,7 +469,7 @@ export default function Home() {
                     )}
                   </>
                 )}
-              </div>
+            </div>
 
               {isGlobalEditing && canManagePractice && (
                 <div className="mb-6 rounded-2xl border border-purple-500/40 bg-purple-500/10 px-4 py-3 text-sm text-purple-100 flex items-center gap-2">
@@ -488,8 +488,8 @@ export default function Home() {
                 </div>
               ) : (
                 <>
-                  {/* Problem Sections */}
-                  <div className="space-y-6">
+            {/* Problem Sections */}
+            <div className="space-y-6">
                     {isGlobalEditing && canManagePractice ? (
                       <Reorder.Group
                         axis="y"
@@ -545,12 +545,12 @@ export default function Home() {
                           !canManagePractice;
 
                         return (
-                          <ProblemSection
-                            key={section.id}
+                <ProblemSection
+                  key={section.id}
                             id={section.id}
-                            title={section.title}
-                            problems={section.problems}
-                            defaultOpen={index === 0}
+                  title={section.title}
+                  problems={section.problems}
+                  defaultOpen={index === 0}
                             onProblemsReorder={updated =>
                               handleProblemsReorder(section.id, updated)
                             }
@@ -569,45 +569,45 @@ export default function Home() {
                                 ? handleProblemUpdate
                                 : undefined
                             }
-                          />
+                />
                         );
                       })
                     )}
-                  </div>
+            </div>
 
                   {!isGlobalEditing && filteredSections.length === 0 && (
-                    <div className="text-center py-16">
-                      <p
-                        className={
-                          theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
-                        }
-                      >
-                        No problems found matching your search.
-                      </p>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          ) : (
-            <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
               <div className="text-center py-16">
-                <h2
-                  className={`mb-4 ${
-                    theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
-                  }`}
-                >
-                  Coming Soon
-                </h2>
                 <p
                   className={
                     theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
                   }
                 >
-                  This section is under development.
+                  No problems found matching your search.
                 </p>
               </div>
+                  )}
+                </>
+            )}
+          </div>
+        ) : (
+          <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+            <div className="text-center py-16">
+              <h2
+                className={`mb-4 ${
+                  theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
+                }`}
+              >
+                Coming Soon
+              </h2>
+              <p
+                className={
+                  theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+                }
+              >
+                This section is under development.
+              </p>
             </div>
+          </div>
           )}
         </div>
       </div>

@@ -55,7 +55,7 @@ export default function LoginPage() {
     }
 
     setLoading(true);
-
+    
     try {
       const result = await login(email, password);
       if (result.success) {
