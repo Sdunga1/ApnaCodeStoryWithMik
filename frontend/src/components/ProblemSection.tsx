@@ -155,6 +155,103 @@ export function ProblemSection({
     isEditing &&
     'border border-purple-500/50 bg-purple-500/5 shadow-inner shadow-purple-500/10';
 
+  // Reusable sections to avoid duplication
+  const progressBarSection = !canManage ? (
+    <div className="hidden sm:flex items-center gap-3">
+      <div
+        className={`w-32 h-2 rounded-full overflow-hidden ${
+          theme === 'dark' ? 'bg-slate-800' : 'bg-slate-200'
+        }`}
+      >
+        <div
+          className="h-full bg-gradient-to-r from-purple-500 to-violet-600"
+          style={{ width: `${progressPercentage}%` }}
+        />
+      </div>
+      <span
+        className={`min-w-[3rem] text-right ${
+          theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+        }`}
+      >
+        {Math.round(progressPercentage)}%
+      </span>
+    </div>
+  ) : null;
+
+  const actionButtonsSection = canManage ? (
+    <div className="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        className={addButtonClasses}
+        aria-label={`Add problem to ${title}`}
+        disabled={editingDisabled && !effectiveEditing}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (editingDisabled && !effectiveEditing) return;
+          if (!effectiveEditing) {
+            onStartEditing?.(sectionId);
+          }
+          setActiveForm({ mode: 'create' });
+        }}
+      >
+        <Plus className="w-4 h-4" />
+        <span className="sr-only">Add problem</span>
+      </button>
+      <button
+        type="button"
+        className={editButtonClasses}
+        aria-label={`Edit ${title}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleEditToggle();
+        }}
+        disabled={editingDisabled && !effectiveEditing}
+      >
+        {effectiveEditing ? (
+          <>
+            <Check className="w-4 h-4 text-emerald-400" />
+            <span className="sr-only">Done editing</span>
+          </>
+        ) : (
+          <>
+            <Pencil className="w-4 h-4 text-rose-400" />
+            <span className="sr-only">Edit</span>
+          </>
+        )}
+      </button>
+      {editingDisabled && !effectiveEditing && (
+        <span className="text-xs text-amber-400">
+          Clear search to edit
+        </span>
+      )}
+    </div>
+  ) : null;
+
+  const statsSection = canManage ? (
+    <>
+      <p
+        className={
+          theme === 'dark' ? 'text-slate-500' : 'text-slate-600'
+        }
+      >
+        {completedCount} / {totalCount} Completed
+      </p>
+      {effectiveEditing && (
+        <p className="mt-1 text-xs font-semibold text-purple-300">
+          Drag to reorder problems
+        </p>
+      )}
+    </>
+  ) : (
+    <p
+      className={
+        theme === 'dark' ? 'text-slate-500' : 'text-slate-600'
+      }
+    >
+      {totalCount} Problems
+    </p>
+  );
+
   return (
     <div
       id={sectionId}
@@ -166,22 +263,20 @@ export function ProblemSection({
       {...props}
     >
       {/* Section Header */}
-      <button
-        onClick={() => !isEditingTitle && setIsOpen(!isOpen)}
-        className={`w-full px-6 py-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between transition-colors ${
-          theme === 'dark' ? 'hover:bg-slate-800/50' : 'hover:bg-slate-100/50'
-        } ${editingBanner ?? ''}`}
-        disabled={isEditingTitle}
-      >
-        <div className="flex items-center gap-4 flex-1">
-          <ChevronDown
-            className={`w-5 h-5 transition-transform ${
-              theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
-            } ${isOpen ? 'rotate-0' : '-rotate-90'} ${isEditingTitle ? 'opacity-50' : ''}`}
-          />
-          <div className="text-left flex-1">
-            {isEditingTitle ? (
-              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+      {isEditingTitle ? (
+        <div
+          className={`w-full px-6 py-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between transition-colors ${
+            theme === 'dark' ? 'hover:bg-slate-800/50' : 'hover:bg-slate-100/50'
+          } ${editingBanner ?? ''}`}
+        >
+          <div className="flex items-center gap-4 flex-1">
+            <ChevronDown
+              className={`w-5 h-5 transition-transform ${
+                theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+              } ${isOpen ? 'rotate-0' : '-rotate-90'} opacity-50`}
+            />
+            <div className="text-left flex-1">
+              <div className="flex items-center gap-2">
                 <Input
                   type="text"
                   value={topicTitle}
@@ -201,20 +296,15 @@ export function ProblemSection({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('Save button clicked!', { sectionId, topicTitle, isSavingTitle });
                     if (!isSavingTitle && topicTitle.trim()) {
                       handleSaveTopicTitle();
                     }
                   }}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }}
                   disabled={isSavingTitle || !topicTitle.trim()}
-                  className={`p-2 rounded-lg transition-colors flex-shrink-0 ${
+                  className={`p-2 rounded-lg transition-colors flex-shrink-0 cursor-pointer ${
                     theme === 'dark'
-                      ? 'bg-green-600 hover:bg-green-700 text-white disabled:bg-slate-700 disabled:text-slate-500'
-                      : 'bg-green-500 hover:bg-green-600 text-white disabled:bg-slate-300 disabled:text-slate-500'
+                      ? 'bg-green-600 hover:bg-green-700 text-white disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed'
+                      : 'bg-green-500 hover:bg-green-600 text-white disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed'
                   }`}
                 >
                   <Check className="w-4 h-4" />
@@ -226,21 +316,39 @@ export function ProblemSection({
                     e.stopPropagation();
                     handleCancelTopicEdit();
                   }}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }}
                   disabled={isSavingTitle}
-                  className={`p-2 rounded-lg transition-colors flex-shrink-0 ${
+                  className={`p-2 rounded-lg transition-colors flex-shrink-0 cursor-pointer ${
                     theme === 'dark'
-                      ? 'bg-slate-700 hover:bg-slate-600 text-white disabled:bg-slate-800 disabled:text-slate-600'
-                      : 'bg-slate-200 hover:bg-slate-300 text-slate-900 disabled:bg-slate-100 disabled:text-slate-400'
+                      ? 'bg-slate-700 hover:bg-slate-600 text-white disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed'
+                      : 'bg-slate-200 hover:bg-slate-300 text-slate-900 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed'
                   }`}
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
-            ) : (
+              {statsSection}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-6">
+            {progressBarSection}
+            {actionButtonsSection}
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className={`w-full px-6 py-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between transition-colors ${
+            theme === 'dark' ? 'hover:bg-slate-800/50' : 'hover:bg-slate-100/50'
+          } ${editingBanner ?? ''}`}
+        >
+          <div className="flex items-center gap-4 flex-1">
+            <ChevronDown
+              className={`w-5 h-5 transition-transform ${
+                theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+              } ${isOpen ? 'rotate-0' : '-rotate-90'}`}
+            />
+            <div className="text-left flex-1">
               <div className="flex items-center gap-2">
                 <h3
                   className={theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}
@@ -264,103 +372,16 @@ export function ProblemSection({
                   </button>
                 )}
               </div>
-            )}
-            {canManage ? (
-              <>
-                <p
-                  className={
-                    theme === 'dark' ? 'text-slate-500' : 'text-slate-600'
-                  }
-                >
-                  {completedCount} / {totalCount} Completed
-                </p>
-                {effectiveEditing && (
-                  <p className="mt-1 text-xs font-semibold text-purple-300">
-                    Drag to reorder problems
-                  </p>
-                )}
-              </>
-            ) : (
-              <p
-                className={
-                  theme === 'dark' ? 'text-slate-500' : 'text-slate-600'
-                }
-              >
-                {totalCount} Problems
-              </p>
-            )}
+              {statsSection}
+            </div>
           </div>
-        </div>
 
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-6">
-          {!canManage && (
-            <div className="hidden sm:flex items-center gap-3">
-              <div
-                className={`w-32 h-2 rounded-full overflow-hidden ${
-                  theme === 'dark' ? 'bg-slate-800' : 'bg-slate-200'
-                }`}
-              >
-                <div
-                  className="h-full bg-gradient-to-r from-purple-500 to-violet-600"
-                  style={{ width: `${progressPercentage}%` }}
-                />
-              </div>
-              <span
-                className={`min-w-[3rem] text-right ${
-                  theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
-                }`}
-              >
-                {Math.round(progressPercentage)}%
-              </span>
-            </div>
-          )}
-
-          {canManage && (
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                className={addButtonClasses}
-                aria-label={`Add problem to ${title}`}
-                disabled={editingDisabled && !effectiveEditing}
-                onClick={() => {
-                  if (editingDisabled && !effectiveEditing) return;
-                  if (!effectiveEditing) {
-                    onStartEditing?.(sectionId);
-                  }
-                  setActiveForm({ mode: 'create' });
-                }}
-              >
-                <Plus className="w-4 h-4" />
-                <span className="sr-only">Add problem</span>
-              </button>
-              <button
-                type="button"
-                className={editButtonClasses}
-                aria-label={`Edit ${title}`}
-                onClick={handleEditToggle}
-                disabled={editingDisabled && !effectiveEditing}
-              >
-                {effectiveEditing ? (
-                  <>
-                    <Check className="w-4 h-4 text-emerald-400" />
-                    <span className="sr-only">Done editing</span>
-                  </>
-                ) : (
-                  <>
-                    <Pencil className="w-4 h-4 text-rose-400" />
-                    <span className="sr-only">Edit</span>
-                  </>
-                )}
-              </button>
-              {editingDisabled && !effectiveEditing && (
-                <span className="text-xs text-amber-400">
-                  Clear search to edit
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-      </button>
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-6">
+            {progressBarSection}
+            {actionButtonsSection}
+          </div>
+        </button>
+      )}
 
       {/* Problems Table */}
       {isOpen && (
