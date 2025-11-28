@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { ChevronDown, Plus, Pencil, Check } from 'lucide-react';
+import { ChevronDown, Plus, Pencil, Check, X } from 'lucide-react';
 import { Reorder } from 'framer-motion';
 import { ProblemRow } from './ProblemRow';
 import { PracticeProblemForm } from './PracticeProblemForm';
 import { useTheme } from '../contexts/ThemeContext';
+import { Input } from './ui/input';
+import { toast } from 'sonner';
 import type { PracticeProblem, PracticeProblemPayload } from '@/types/practice';
 
 type ProblemSectionProps = {
@@ -28,6 +30,9 @@ type ProblemSectionProps = {
     problemId: string,
     payload: PracticeProblemPayload
   ) => Promise<void>;
+  isNewTopic?: boolean;
+  onTopicTitleSave?: (topicId: string, newTitle: string) => Promise<void>;
+  onTopicCancel?: (topicId: string) => void;
 } & Omit<React.ComponentProps<'div'>, 'children'>;
 
 export function ProblemSection({
@@ -43,6 +48,9 @@ export function ProblemSection({
   canManage = false,
   onAddProblem,
   onUpdateProblem,
+  isNewTopic = false,
+  onTopicTitleSave,
+  onTopicCancel,
   ...props
 }: ProblemSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -51,6 +59,9 @@ export function ProblemSection({
     mode: 'create' | 'edit';
     problem?: PracticeProblem;
   } | null>(null);
+  const [isEditingTitle, setIsEditingTitle] = useState(isNewTopic);
+  const [topicTitle, setTopicTitle] = useState(title);
+  const [isSavingTitle, setIsSavingTitle] = useState(false);
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -62,6 +73,52 @@ export function ProblemSection({
       setActiveForm(null);
     }
   }, [isEditing]);
+
+  useEffect(() => {
+    setTopicTitle(title);
+  }, [title]);
+
+  const handleSaveTopicTitle = async () => {
+    if (!topicTitle.trim()) {
+      toast.error('Topic name cannot be empty');
+      return;
+    }
+    if (!onTopicTitleSave) {
+      console.error('onTopicTitleSave callback is not provided');
+      toast.error('Unable to save topic');
+      return;
+    }
+    setIsSavingTitle(true);
+    try {
+      await onTopicTitleSave(sectionId, topicTitle.trim());
+      setIsEditingTitle(false);
+      toast.success('Topic updated successfully');
+    } catch (error: any) {
+      console.error('Failed to save topic title:', error);
+      toast.error(error?.message || 'Failed to save topic');
+    } finally {
+      setIsSavingTitle(false);
+    }
+  };
+
+  const handleCancelTopicEdit = () => {
+    if (isNewTopic) {
+      onTopicCancel?.(sectionId);
+    } else {
+      setTopicTitle(title);
+      setIsEditingTitle(false);
+    }
+  };
+
+  const handleTopicTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSaveTopicTitle();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleCancelTopicEdit();
+    }
+  };
 
   const totalCount = localProblems.length;
   const completedCount = 0;
@@ -110,23 +167,104 @@ export function ProblemSection({
     >
       {/* Section Header */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => !isEditingTitle && setIsOpen(!isOpen)}
         className={`w-full px-6 py-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between transition-colors ${
           theme === 'dark' ? 'hover:bg-slate-800/50' : 'hover:bg-slate-100/50'
         } ${editingBanner ?? ''}`}
+        disabled={isEditingTitle}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-1">
           <ChevronDown
             className={`w-5 h-5 transition-transform ${
               theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
-            } ${isOpen ? 'rotate-0' : '-rotate-90'}`}
+            } ${isOpen ? 'rotate-0' : '-rotate-90'} ${isEditingTitle ? 'opacity-50' : ''}`}
           />
-          <div className="text-left">
-            <h3
-              className={theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}
-            >
-              {title}
-            </h3>
+          <div className="text-left flex-1">
+            {isEditingTitle ? (
+              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+                <Input
+                  type="text"
+                  value={topicTitle}
+                  onChange={(e) => setTopicTitle(e.target.value)}
+                  onKeyDown={handleTopicTitleKeyDown}
+                  placeholder="Enter topic name..."
+                  autoFocus
+                  disabled={isSavingTitle}
+                  className={`h-9 ${
+                    theme === 'dark'
+                      ? 'bg-slate-800 border-slate-700 text-slate-100'
+                      : 'bg-white border-slate-300 text-slate-900'
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Save button clicked!', { sectionId, topicTitle, isSavingTitle });
+                    if (!isSavingTitle && topicTitle.trim()) {
+                      handleSaveTopicTitle();
+                    }
+                  }}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  disabled={isSavingTitle || !topicTitle.trim()}
+                  className={`p-2 rounded-lg transition-colors flex-shrink-0 ${
+                    theme === 'dark'
+                      ? 'bg-green-600 hover:bg-green-700 text-white disabled:bg-slate-700 disabled:text-slate-500'
+                      : 'bg-green-500 hover:bg-green-600 text-white disabled:bg-slate-300 disabled:text-slate-500'
+                  }`}
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleCancelTopicEdit();
+                  }}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  disabled={isSavingTitle}
+                  className={`p-2 rounded-lg transition-colors flex-shrink-0 ${
+                    theme === 'dark'
+                      ? 'bg-slate-700 hover:bg-slate-600 text-white disabled:bg-slate-800 disabled:text-slate-600'
+                      : 'bg-slate-200 hover:bg-slate-300 text-slate-900 disabled:bg-slate-100 disabled:text-slate-400'
+                  }`}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <h3
+                  className={theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}
+                >
+                  {title}
+                </h3>
+                {canManage && !editingDisabled && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsEditingTitle(true);
+                    }}
+                    className={`p-1 rounded transition-colors ${
+                      theme === 'dark'
+                        ? 'hover:bg-slate-700 text-slate-400 hover:text-slate-200'
+                        : 'hover:bg-slate-200 text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            )}
             {canManage ? (
               <>
                 <p

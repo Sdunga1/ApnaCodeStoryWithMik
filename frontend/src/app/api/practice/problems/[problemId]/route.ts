@@ -2,19 +2,18 @@ import { NextResponse } from 'next/server';
 import { updatePracticeProblem } from '@/lib/practice';
 import type { PracticeProblemPayload } from '@/types/practice';
 
-interface Params {
-  problemId: string;
-}
-
-export async function PATCH(request: Request, context: { params: Params }) {
-  const { problemId } = context.params;
-  if (!problemId) {
-    return NextResponse.json(
-      { success: false, message: 'Problem id is required' },
-      { status: 400 }
-    );
-  }
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ problemId: string }> }
+) {
   try {
+    const { problemId } = await params;
+    if (!problemId) {
+      return NextResponse.json(
+        { success: false, message: 'Problem id is required' },
+        { status: 400 }
+      );
+    }
     const body = (await request.json()) as Partial<PracticeProblemPayload>;
     const updated = await updatePracticeProblem(problemId, {
       title: body.title ?? '',

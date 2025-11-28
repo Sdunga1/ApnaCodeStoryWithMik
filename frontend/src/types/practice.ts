@@ -23,4 +23,8 @@ export interface PracticeProblemPayload {
   solutionVideoUrl?: string;
 }
 
+export interface PracticeTopicPayload {
+  title: string;
+}
+
 
