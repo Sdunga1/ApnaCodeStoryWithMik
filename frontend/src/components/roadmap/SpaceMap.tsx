@@ -45,9 +45,9 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import * as THREE from 'three';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Draggable Wrapper for Edit Mode
 const DraggableTopic = ({
@@ -275,26 +275,28 @@ const SpaceMapContent = ({
   const handleStartDrag = (e: any, topic: DSATopic) => {
     if (!isEditMode) return;
     e.stopPropagation();
-    
+
     // Get the native DOM event for accurate coordinates
     const nativeEvent = e.nativeEvent || e;
-    const clientX = nativeEvent.clientX ?? nativeEvent.touches?.[0]?.clientX ?? 0;
-    const clientY = nativeEvent.clientY ?? nativeEvent.touches?.[0]?.clientY ?? 0;
-    
+    const clientX =
+      nativeEvent.clientX ?? nativeEvent.touches?.[0]?.clientX ?? 0;
+    const clientY =
+      nativeEvent.clientY ?? nativeEvent.touches?.[0]?.clientY ?? 0;
+
     // Calculate the intersection point where the user clicked
     const pointer = new THREE.Vector2(
       (clientX / window.innerWidth) * 2 - 1,
       -(clientY / window.innerHeight) * 2 + 1
     );
-    
+
     raycaster.setFromCamera(pointer, camera);
     const clickedPoint = new THREE.Vector3();
     raycaster.ray.intersectPlane(plane, clickedPoint);
-    
+
     // Calculate offset between click position and node position
     const nodePos = new THREE.Vector3(...topic.position);
     const offset = new THREE.Vector3().subVectors(nodePos, clickedPoint);
-    
+
     setDragOffset(offset);
     setDraggingId(topic.id);
     onTopicSelect(topic);
@@ -430,6 +432,9 @@ const SpaceMapContent = ({
 };
 
 export const SpaceMap = () => {
+  const { user, isAuthenticated } = useAuth();
+  const isCreator = isAuthenticated && user?.role === 'creator';
+  
   const [selectedTopic, setSelectedTopic] = useState<DSATopic | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -485,6 +490,14 @@ export const SpaceMap = () => {
     }
   }, []);
 
+  // Disable edit mode for non-creators
+  useEffect(() => {
+    if (!isCreator && isEditMode) {
+      setIsEditMode(false);
+      setLinkSource(null);
+    }
+  }, [isCreator, isEditMode]);
+
   const undo = () => {
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1;
@@ -492,7 +505,6 @@ export const SpaceMap = () => {
       setTopics(state.topics);
       setEdges(state.edges);
       setHistoryIndex(newIndex);
-      toast.success('Reverted to previous state.', { id: 'undo' });
     }
   };
 
@@ -503,7 +515,6 @@ export const SpaceMap = () => {
       setTopics(state.topics);
       setEdges(state.edges);
       setHistoryIndex(newIndex);
-      toast.success('Restored next state.', { id: 'redo' });
     }
   };
 
@@ -525,10 +536,6 @@ export const SpaceMap = () => {
       localStorage.setItem('dsa-edges', JSON.stringify(edges));
     }
 
-    // Force a small delay to ensure UI feedback feels responsive
-    setTimeout(() => {
-      toast.success('Your constellation has been preserved.', { id: 'save' });
-    }, 100);
   };
 
   const handleCreateNode = () => {
@@ -552,33 +559,33 @@ export const SpaceMap = () => {
     const startTime = Date.now();
     const duration = 400; // 400ms animation
     const nodeId = newTopic.id; // Capture node ID for closure
-    
+
     const animate = () => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      
+
       // Ease-out cubic for smooth animation
       const easeOut = 1 - Math.pow(1 - progress, 3);
       const newScale = 0.1 + (1 - 0.1) * easeOut;
-      
-      setTopics(prev => prev.map(t =>
-        t.id === nodeId ? { ...t, scale: newScale } : t
-      ));
-      
+
+      setTopics(prev =>
+        prev.map(t => (t.id === nodeId ? { ...t, scale: newScale } : t))
+      );
+
       if (progress < 1) {
         requestAnimationFrame(animate);
       } else {
         // Ensure final scale is exactly 1
-        setTopics(prev => prev.map(t =>
-          t.id === nodeId ? { ...t, scale: 1 } : t
-        ));
+        setTopics(prev =>
+          prev.map(t => (t.id === nodeId ? { ...t, scale: 1 } : t))
+        );
         // Update selected topic if it's the newly created one
-        setSelectedTopic(prev => 
+        setSelectedTopic(prev =>
           prev?.id === nodeId ? { ...prev, scale: 1 } : prev
         );
       }
     };
-    
+
     requestAnimationFrame(animate);
 
     // Reset form
@@ -589,7 +596,6 @@ export const SpaceMap = () => {
     setNewNodeFontSize(0.45);
     setNewNodeTextColor('#ffffff');
 
-    toast.success('A new star is born.', { id: 'create-node' });
   };
 
   const handleDeleteTopic = () => {
@@ -601,7 +607,6 @@ export const SpaceMap = () => {
 
     updateState(newTopics, newEdges);
     setSelectedTopic(null);
-    toast.success('Star collapsed into a black hole.', { id: 'delete-node' });
   };
 
   const handleUpdateTopic = (updates: Partial<DSATopic>) => {
@@ -657,11 +662,9 @@ export const SpaceMap = () => {
               (e.source === selectedTopic.id && e.target === linkSource)
             )
         );
-        toast.success('Connection removed.', { id: 'link-severed' });
       } else {
         // Add link
         newEdges = [...edges, { source: linkSource, target: selectedTopic.id }];
-        toast.success('Quantum tunnel created.', { id: 'link-established' });
       }
 
       updateState(topics, newEdges);
@@ -669,8 +672,10 @@ export const SpaceMap = () => {
     }
   };
 
-  // Keyboard Shortcuts
+  // Keyboard Shortcuts (Creator only)
   useEffect(() => {
+    if (!isCreator) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if typing in an input
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
@@ -700,7 +705,7 @@ export const SpaceMap = () => {
 
       // Delete: Delete or Backspace
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (selectedTopic) {
+        if (selectedTopic && isEditMode) {
           e.preventDefault();
           handleDeleteTopic();
         }
@@ -709,7 +714,7 @@ export const SpaceMap = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [topics, edges, history, historyIndex, selectedTopic]);
+  }, [topics, edges, history, historyIndex, selectedTopic, isCreator, isEditMode]);
 
   return (
     <div className="w-full h-full relative bg-black overflow-visible">
@@ -723,48 +728,50 @@ export const SpaceMap = () => {
             CodeStorywithMik <span className="text-blue-500">Roadmap</span>
           </h1>
           <p className="text-blue-200 font-light text-sm mt-1 max-w-md font-rajdhani opacity-80">
-            {isEditMode ? 'EDIT MODE ENABLED' : 'Exploration Mode'}
+            {isCreator && isEditMode ? 'EDIT MODE ENABLED' : 'Welcome to the World of DSA'}
           </p>
         </div>
 
-        <div className="flex gap-2 mt-2" style={{ pointerEvents: 'auto' }}>
-          <Button
-            variant={isEditMode ? 'secondary' : 'outline'}
-            size="sm"
-            onClick={() => {
-              if (isEditMode) {
-                // Auto-save when exiting edit mode
-                handleSave();
-              }
-              setIsEditMode(!isEditMode);
-            }}
-            className="gap-2 font-orbitron tracking-wider border-blue-500/50 text-blue-100 bg-blue-900/20 hover:bg-blue-800/50"
-          >
-            <Edit className="w-4 h-4" />{' '}
-            {isEditMode ? 'Done Editing' : 'Edit Cosmos'}
-          </Button>
+        {isCreator && (
+          <div className="flex gap-2 mt-2" style={{ pointerEvents: 'auto' }}>
+            <Button
+              variant={isEditMode ? 'secondary' : 'outline'}
+              size="sm"
+              onClick={() => {
+                if (isEditMode) {
+                  // Auto-save when exiting edit mode
+                  handleSave();
+                }
+                setIsEditMode(!isEditMode);
+              }}
+              className="gap-2 font-orbitron tracking-wider border-blue-500/50 text-blue-100 bg-blue-900/20 hover:bg-blue-800/50"
+            >
+              <Edit className="w-4 h-4" />{' '}
+              {isEditMode ? 'Done Editing' : 'Edit Cosmos'}
+            </Button>
 
-          {isEditMode && (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSave}
-                className="gap-2 font-orbitron border-green-500/50 text-green-100 bg-green-900/20 hover:bg-green-800/50"
-              >
-                <Save className="w-4 h-4" /> Save
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsAddDialogOpen(true)}
-                className="gap-2 font-orbitron border-purple-500/50 text-purple-100 bg-purple-900/20 hover:bg-purple-800/50"
-              >
-                <Plus className="w-4 h-4" /> Add Node
-              </Button>
-            </>
-          )}
-        </div>
+            {isEditMode && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSave}
+                  className="gap-2 font-orbitron border-green-500/50 text-green-100 bg-green-900/20 hover:bg-green-800/50"
+                >
+                  <Save className="w-4 h-4" /> Save
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsAddDialogOpen(true)}
+                  className="gap-2 font-orbitron border-purple-500/50 text-purple-100 bg-purple-900/20 hover:bg-purple-800/50"
+                >
+                  <Plus className="w-4 h-4" /> Add Node
+                </Button>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Top Right Zoom Controls */}
@@ -805,84 +812,87 @@ export const SpaceMap = () => {
 
       {/* Add Node Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="bg-slate-950 border-blue-500/30 text-white sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="text-blue-300 font-orbitron">
+        <DialogContent className="bg-slate-950/95 backdrop-blur-xl border-blue-500/30 text-white shadow-[0_0_30px_rgba(59,130,246,0.3)] sm:max-w-[425px]">
+          <DialogHeader className="text-left">
+            <DialogTitle className="text-xl font-orbitron text-blue-300 tracking-wider">
               Create New Node
             </DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name" className="text-slate-400">
+              <Label htmlFor="name" className="text-xs text-slate-400 font-rajdhani">
                 Name
               </Label>
               <Input
                 id="name"
                 value={newNodeName}
                 onChange={e => setNewNodeName(e.target.value)}
-                className="bg-slate-900/50 border-blue-500/30 text-white"
+                className="bg-slate-900/50 border-blue-500/30 text-white placeholder:text-slate-500 focus:border-blue-500"
                 placeholder="Topic Name"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="desc" className="text-slate-400">
+              <Label htmlFor="desc" className="text-xs text-slate-400 font-rajdhani">
                 Description
               </Label>
               <Textarea
                 id="desc"
                 value={newNodeDesc}
                 onChange={e => setNewNodeDesc(e.target.value)}
-                className="bg-slate-900/50 border-blue-500/30 text-white"
+                className="bg-slate-900/50 border-blue-500/30 text-white placeholder:text-slate-500 focus:border-blue-500 min-h-[80px] resize-none"
                 placeholder="Short description..."
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label className="text-slate-400">Shape</Label>
+                <Label className="text-xs text-slate-400 font-rajdhani">Shape</Label>
                 <Select
                   value={newNodeShape}
                   onValueChange={(v: DSAShape) => setNewNodeShape(v)}
                 >
-                  <SelectTrigger className="bg-slate-900/50 border-blue-500/30 text-white">
+                  <SelectTrigger className="h-9 bg-slate-900/50 border-blue-500/30 text-white focus:border-blue-500">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="rect">Rectangle</SelectItem>
-                    <SelectItem value="circle">Circle</SelectItem>
-                    <SelectItem value="rhomboid">Rhombus</SelectItem>
+                  <SelectContent className="bg-slate-900 border-blue-500/30 z-[200]">
+                    <SelectItem value="rect" className="text-white focus:bg-blue-600/50">Rectangle</SelectItem>
+                    <SelectItem value="circle" className="text-white focus:bg-blue-600/50">Circle</SelectItem>
+                    <SelectItem value="rhomboid" className="text-white focus:bg-blue-600/50">Rhombus</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label className="text-slate-400">Category</Label>
+                <Label className="text-xs text-slate-400 font-rajdhani">Category</Label>
                 <Select
                   value={newNodeCategory}
                   onValueChange={(v: DSACategory) => setNewNodeCategory(v)}
                 >
-                  <SelectTrigger className="bg-slate-900/50 border-blue-500/30 text-white">
+                  <SelectTrigger className="h-9 bg-slate-900/50 border-blue-500/30 text-white focus:border-blue-500">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Foundation">Foundation</SelectItem>
-                    <SelectItem value="Core">Core</SelectItem>
-                    <SelectItem value="Intermediate">Intermediate</SelectItem>
-                    <SelectItem value="Advanced">Advanced</SelectItem>
-                    <SelectItem value="Final">Final</SelectItem>
+                  <SelectContent className="bg-slate-900 border-blue-500/30 z-[200]">
+                    <SelectItem value="Foundation" className="text-white focus:bg-blue-600/50">Foundation</SelectItem>
+                    <SelectItem value="Core" className="text-white focus:bg-blue-600/50">Core</SelectItem>
+                    <SelectItem value="Intermediate" className="text-white focus:bg-blue-600/50">Intermediate</SelectItem>
+                    <SelectItem value="Advanced" className="text-white focus:bg-blue-600/50">Advanced</SelectItem>
+                    <SelectItem value="Final" className="text-white focus:bg-blue-600/50">Final</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-2 mt-4">
             <Button
               variant="secondary"
+              size="sm"
               onClick={() => setIsAddDialogOpen(false)}
+              className="bg-slate-800/50 hover:bg-slate-700/50 text-white border-slate-600/50 text-sm h-9"
             >
               Cancel
             </Button>
             <Button
+              size="sm"
               onClick={handleCreateNode}
-              className="bg-blue-600 hover:bg-blue-500"
+              className="bg-blue-600 hover:bg-blue-500 text-white text-sm h-9 px-4"
             >
               Create Node
             </Button>
@@ -891,7 +901,7 @@ export const SpaceMap = () => {
       </Dialog>
 
       {/* Link Creation Overlay Hint */}
-      {linkSource && isEditMode && (
+      {linkSource && isCreator && isEditMode && (
         <div className="absolute top-[calc(106px+6rem)] lg:top-[calc(152px+6rem)] left-1/2 -translate-x-1/2 z-20 bg-blue-600 text-white px-4 py-2 rounded-full font-bold animate-pulse shadow-[0_0_20px_rgba(37,99,235,0.8)] pointer-events-none">
           Select target node to link
         </div>
@@ -920,7 +930,7 @@ export const SpaceMap = () => {
         </div>
         <div className="mt-2 opacity-50">
           Left Click + Drag to Pan | Scroll to Zoom{' '}
-          {isEditMode && '| Drag handles to Move'}
+          {isCreator && isEditMode && '| Drag handles to Move'}
         </div>
       </div>
 
@@ -930,7 +940,7 @@ export const SpaceMap = () => {
           <Card className="bg-slate-950/90 backdrop-blur-xl border-blue-500/30 text-white shadow-[0_0_30px_rgba(59,130,246,0.2)]">
             <CardHeader className="pb-2">
               <CardTitle className="text-xl font-orbitron text-blue-300 flex justify-between items-center">
-                {isEditMode ? (
+                {isCreator && isEditMode ? (
                   <Input
                     value={selectedTopic.name}
                     onChange={e => handleUpdateTopic({ name: e.target.value })}
@@ -956,7 +966,7 @@ export const SpaceMap = () => {
             </CardHeader>
 
             <CardContent className="space-y-4">
-              {isEditMode ? (
+              {isCreator && isEditMode ? (
                 <div className="space-y-3">
                   <div className="space-y-1">
                     <Label className="text-xs text-slate-400">
@@ -1134,7 +1144,7 @@ export const SpaceMap = () => {
             topics={topics}
             edges={edges}
             onTopicSelect={t => {
-              if (linkSource && isEditMode && linkSource !== t.id) {
+              if (linkSource && isCreator && isEditMode && linkSource !== t.id) {
                 // If linking, selecting another node completes the link
                 const exists = edges.some(
                   e =>
@@ -1151,14 +1161,8 @@ export const SpaceMap = () => {
                         (e.source === t.id && e.target === linkSource)
                       )
                   );
-                  toast.success('Connection removed.', {
-                    id: 'link-severed-select',
-                  });
                 } else {
                   newEdges = [...edges, { source: linkSource, target: t.id }];
-                  toast.success('Quantum tunnel created.', {
-                    id: 'link-established-select',
-                  });
                 }
 
                 updateState(topics, newEdges);
@@ -1168,12 +1172,11 @@ export const SpaceMap = () => {
               }
             }}
             selectedTopic={selectedTopic}
-            isEditMode={isEditMode}
+            isEditMode={isCreator && isEditMode}
             onTopicMove={handleMoveTopic}
             onDeleteEdge={index => {
               const newEdges = edges.filter((_, i) => i !== index);
               updateState(topics, newEdges);
-              toast.success('Connection severed.', { id: 'link-deleted' });
             }}
             fitTrigger={fitTrigger}
             zoomInTrigger={zoomInTrigger}
