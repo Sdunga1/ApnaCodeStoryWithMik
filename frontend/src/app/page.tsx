@@ -45,7 +45,17 @@ import { Reorder } from 'framer-motion';
 export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeView, setActiveView] = useState('home');
+  const [activeView, setActiveView] = useState(() => {
+    // Restore view from sessionStorage if available
+    if (typeof window !== 'undefined') {
+      const savedView = sessionStorage.getItem('activeView');
+      if (savedView) {
+        sessionStorage.removeItem('activeView'); // Clear after reading
+        return savedView;
+      }
+    }
+    return 'home';
+  });
   const [topicSections, setTopicSections] = useState<PracticeTopic[]>([]);
   const [practiceLoading, setPracticeLoading] = useState(true);
   const [practiceError, setPracticeError] = useState<string | null>(null);

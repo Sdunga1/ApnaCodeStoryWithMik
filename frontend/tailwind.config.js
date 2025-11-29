@@ -8,6 +8,10 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        orbitron: ['var(--font-orbitron)', 'sans-serif'],
+        rajdhani: ['var(--font-rajdhani)', 'sans-serif'],
+      },
       keyframes: {
         shine: {
           '0%': { 'background-position': '100%' },
