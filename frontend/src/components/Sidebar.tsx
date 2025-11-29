@@ -1,7 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Home, BookOpen, List, X, Sun, Moon, PlusCircle } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { Home, BookOpen, List, X, Sun, Moon, PlusCircle, Map } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Progress } from './ui/progress';
 import { useTheme } from '../contexts/ThemeContext';
@@ -27,6 +29,8 @@ export function Sidebar({
   const progressPercentage = (completedProblems / totalProblems) * 100;
   const { theme, toggleTheme } = useTheme();
   const { user, isAuthenticated } = useAuth();
+  const pathname = usePathname();
+  const router = useRouter();
   const username =
     isAuthenticated && user?.username
       ? user.username
@@ -35,17 +39,38 @@ export function Sidebar({
       : 'dsa_learner';
   const showProgress = isAuthenticated && user?.role !== 'creator';
   const isCreator = isAuthenticated && user?.role === 'creator';
+  
+  // Handle navigation - if on a different route, navigate to home first
+  const handleNavClick = (value: string) => {
+    if (pathname !== '/') {
+      // Store the view in sessionStorage and navigate to home
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('activeView', value);
+      }
+      router.push('/');
+    } else {
+      onViewChange(value);
+    }
+    onClose();
+  };
 
   // Dynamic nav items based on user role
-  const navItems = isCreator
+  const navItems: Array<{
+    icon: React.ComponentType<{ className?: string }>;
+    label: string;
+    value: string;
+    href?: string;
+  }> = isCreator
     ? [
         { icon: Home, label: 'Home', value: 'home' },
         { icon: PlusCircle, label: 'Create Post', value: 'create-post' },
         { icon: List, label: 'Practice Problems', value: 'practice' },
+        { icon: Map, label: 'Roadmap', value: 'roadmap', href: '/roadmap' },
       ]
     : [
         { icon: Home, label: 'Home', value: 'home' },
         { icon: List, label: 'Practice Problems', value: 'practice' },
+        { icon: Map, label: 'Roadmap', value: 'roadmap', href: '/roadmap' },
         { icon: BookOpen, label: 'Courses / Roadmaps', value: 'courses' },
       ];
 
@@ -107,14 +132,39 @@ export function Sidebar({
       <nav className="flex-1 p-4 space-y-2">
         {navItems.map(item => {
           const Icon = item.icon;
-          const isActive = activeView === item.value;
+          // Check if active based on route (for href items) or activeView (for view items)
+          const isActive = item.href 
+            ? pathname === item.href 
+            : activeView === item.value;
+          
+          if (item.href) {
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                onClick={() => onClose()}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                  isActive
+                    ? `bg-purple-500/10 border border-purple-500/20 ${
+                        theme === 'dark' ? 'text-purple-400' : 'text-purple-600'
+                      }`
+                    : `${
+                        theme === 'dark'
+                          ? 'text-slate-400 hover:bg-slate-800 hover:text-slate-300'
+                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
+                      }`
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          }
+          
           return (
             <button
               key={item.label}
-              onClick={() => {
-                onViewChange(item.value);
-                onClose();
-              }}
+              onClick={() => handleNavClick(item.value)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                 isActive
                   ? `bg-purple-500/10 border border-purple-500/20 ${
