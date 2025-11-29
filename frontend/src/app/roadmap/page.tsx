@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
+import Header from '@/components/Header';
 import { SpaceMap } from '@/components/roadmap/SpaceMap';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Menu } from 'lucide-react';
 
 export default function RoadmapPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -48,19 +48,14 @@ export default function RoadmapPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 relative overflow-hidden">
-        {/* Mobile Menu Button - Positioned below SpaceMap UI to avoid overlap */}
-        {!sidebarOpen && (
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(true)}
-            className="fixed top-24 left-4 z-[110] lg:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-black/70 text-white shadow-sm transition-colors"
-            aria-label="Toggle navigation menu"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-        )}
-        <SpaceMap />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          sidebarOpen={sidebarOpen}
+        />
+        <div className="flex-1 relative overflow-hidden" style={{ paddingTop: 0 }}>
+          <SpaceMap />
+        </div>
       </div>
     </div>
   );

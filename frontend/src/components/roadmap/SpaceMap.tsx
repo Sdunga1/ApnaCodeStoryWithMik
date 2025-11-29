@@ -714,7 +714,7 @@ export const SpaceMap = () => {
   return (
     <div className="w-full h-full relative bg-black overflow-visible">
       {/* UI Overlay Header */}
-      <div className="absolute top-4 left-4 z-[100] select-none flex flex-col gap-2 pointer-events-none">
+      <div className="absolute top-[calc(106px+1rem)] lg:top-[calc(152px+1rem)] left-4 z-[100] select-none flex flex-col gap-2 pointer-events-none">
         <div>
           <h1
             className="text-4xl font-bold text-white tracking-wider font-orbitron"
@@ -769,7 +769,7 @@ export const SpaceMap = () => {
 
       {/* Top Right Zoom Controls */}
       <div
-        className="absolute top-4 right-4 z-[100] flex items-center gap-2 bg-black/70 backdrop-blur-md p-2 rounded-xl border border-blue-500/40 shadow-[0_0_20px_rgba(59,130,246,0.3)]"
+        className="absolute top-[calc(106px+1rem)] lg:top-[calc(152px+1rem)] right-4 z-[100] flex items-center gap-2 bg-black/70 backdrop-blur-md p-2 rounded-xl border border-blue-500/40 shadow-[0_0_20px_rgba(59,130,246,0.3)]"
         style={{ pointerEvents: 'auto' }}
       >
         <Button
@@ -892,7 +892,7 @@ export const SpaceMap = () => {
 
       {/* Link Creation Overlay Hint */}
       {linkSource && isEditMode && (
-        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-20 bg-blue-600 text-white px-4 py-2 rounded-full font-bold animate-pulse shadow-[0_0_20px_rgba(37,99,235,0.8)] pointer-events-none">
+        <div className="absolute top-[calc(106px+6rem)] lg:top-[calc(152px+6rem)] left-1/2 -translate-x-1/2 z-20 bg-blue-600 text-white px-4 py-2 rounded-full font-bold animate-pulse shadow-[0_0_20px_rgba(37,99,235,0.8)] pointer-events-none">
           Select target node to link
         </div>
       )}
