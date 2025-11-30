@@ -995,10 +995,10 @@ export const SpaceMap = () => {
                         <SelectTrigger className="h-8 bg-slate-900/50 border-blue-500/30 text-xs">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="rect">Rectangle</SelectItem>
-                          <SelectItem value="circle">Circle</SelectItem>
-                          <SelectItem value="rhomboid">Rhombus</SelectItem>
+                        <SelectContent className="bg-slate-900 border-blue-500/30 z-[200]">
+                          <SelectItem value="rect" className="text-white focus:bg-blue-600/50">Rectangle</SelectItem>
+                          <SelectItem value="circle" className="text-white focus:bg-blue-600/50">Circle</SelectItem>
+                          <SelectItem value="rhomboid" className="text-white focus:bg-blue-600/50">Rhombus</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1014,14 +1014,14 @@ export const SpaceMap = () => {
                         <SelectTrigger className="h-8 bg-slate-900/50 border-blue-500/30 text-xs">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Foundation">Foundation</SelectItem>
-                          <SelectItem value="Core">Core</SelectItem>
-                          <SelectItem value="Intermediate">
+                        <SelectContent className="bg-slate-900 border-blue-500/30 z-[200]">
+                          <SelectItem value="Foundation" className="text-white focus:bg-blue-600/50">Foundation</SelectItem>
+                          <SelectItem value="Core" className="text-white focus:bg-blue-600/50">Core</SelectItem>
+                          <SelectItem value="Intermediate" className="text-white focus:bg-blue-600/50">
                             Intermediate
                           </SelectItem>
-                          <SelectItem value="Advanced">Advanced</SelectItem>
-                          <SelectItem value="Final">Final</SelectItem>
+                          <SelectItem value="Advanced" className="text-white focus:bg-blue-600/50">Advanced</SelectItem>
+                          <SelectItem value="Final" className="text-white focus:bg-blue-600/50">Final</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
