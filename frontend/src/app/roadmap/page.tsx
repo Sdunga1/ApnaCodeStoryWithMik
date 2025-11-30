@@ -53,6 +53,8 @@ export default function RoadmapPage() {
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           sidebarOpen={sidebarOpen}
         />
+        {/* Spacer to push content below the fixed header - mobile header is taller due to stacking */}
+        <div className="shrink-0 h-[200px] sm:h-[160px] md:h-[130px] lg:h-[160px]" />
         <div className="flex-1 relative overflow-hidden" style={{ paddingTop: 0 }}>
           <SpaceMap />
         </div>

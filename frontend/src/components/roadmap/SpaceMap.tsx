@@ -719,21 +719,21 @@ export const SpaceMap = () => {
   return (
     <div className="w-full h-full relative bg-black overflow-visible">
       {/* UI Overlay Header */}
-      <div className="absolute top-[calc(106px+1rem)] lg:top-[calc(152px+1rem)] left-4 z-[100] select-none flex flex-col gap-2 pointer-events-none">
+      <div className="absolute top-8 sm:top-6 md:top-4 left-4 z-40 select-none flex flex-col gap-2 pointer-events-none">
         <div>
           <h1
-            className="text-4xl font-bold text-white tracking-wider font-orbitron"
+            className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white tracking-wider font-orbitron"
             style={{ textShadow: '0 0 10px rgba(96, 165, 250, 0.8)' }}
           >
             CodeStorywithMik <span className="text-blue-500">Roadmap</span>
           </h1>
-          <p className="text-blue-200 font-light text-sm mt-1 max-w-md font-rajdhani opacity-80">
+          <p className="text-blue-200 font-light text-xs sm:text-sm mt-1 max-w-md font-rajdhani opacity-80">
             {isCreator && isEditMode ? 'EDIT MODE ENABLED' : 'Welcome to the World of DSA'}
           </p>
         </div>
 
         {isCreator && (
-          <div className="flex gap-2 mt-2" style={{ pointerEvents: 'auto' }}>
+          <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2 max-w-[calc(100%-5rem)]" style={{ pointerEvents: 'auto' }}>
             <Button
               variant={isEditMode ? 'secondary' : 'outline'}
               size="sm"
@@ -744,10 +744,11 @@ export const SpaceMap = () => {
                 }
                 setIsEditMode(!isEditMode);
               }}
-              className="gap-2 font-orbitron tracking-wider border-blue-500/50 text-blue-100 bg-blue-900/20 hover:bg-blue-800/50"
+              className="h-7 sm:h-9 px-2 sm:px-3 gap-1 sm:gap-2 text-xs sm:text-sm font-orbitron tracking-wider border-blue-500/50 text-blue-100 bg-blue-900/20 hover:bg-blue-800/50"
             >
-              <Edit className="w-4 h-4" />{' '}
-              {isEditMode ? 'Done Editing' : 'Edit Cosmos'}
+              <Edit className="w-3 h-3 sm:w-4 sm:h-4" />{' '}
+              <span className="hidden sm:inline">{isEditMode ? 'Done Editing' : 'Edit Cosmos'}</span>
+              <span className="sm:hidden">{isEditMode ? 'Done' : 'Edit'}</span>
             </Button>
 
             {isEditMode && (
@@ -756,17 +757,18 @@ export const SpaceMap = () => {
                   variant="outline"
                   size="sm"
                   onClick={handleSave}
-                  className="gap-2 font-orbitron border-green-500/50 text-green-100 bg-green-900/20 hover:bg-green-800/50"
+                  className="h-7 sm:h-9 px-2 sm:px-3 gap-1 sm:gap-2 text-xs sm:text-sm font-orbitron border-green-500/50 text-green-100 bg-green-900/20 hover:bg-green-800/50"
                 >
-                  <Save className="w-4 h-4" /> Save
+                  <Save className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Save</span>
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setIsAddDialogOpen(true)}
-                  className="gap-2 font-orbitron border-purple-500/50 text-purple-100 bg-purple-900/20 hover:bg-purple-800/50"
+                  className="h-7 sm:h-9 px-2 sm:px-3 gap-1 sm:gap-2 text-xs sm:text-sm font-orbitron border-purple-500/50 text-purple-100 bg-purple-900/20 hover:bg-purple-800/50"
                 >
-                  <Plus className="w-4 h-4" /> Add Node
+                  <Plus className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Add Node</span>
+                  <span className="sm:hidden">Add</span>
                 </Button>
               </>
             )}
@@ -776,37 +778,37 @@ export const SpaceMap = () => {
 
       {/* Top Right Zoom Controls */}
       <div
-        className="absolute top-[calc(106px+1rem)] lg:top-[calc(152px+1rem)] right-4 z-[100] flex items-center gap-2 bg-black/70 backdrop-blur-md p-2 rounded-xl border border-blue-500/40 shadow-[0_0_20px_rgba(59,130,246,0.3)]"
+        className="absolute top-[5.5rem] sm:top-4 right-4 z-40 flex flex-col sm:flex-row items-center gap-1 sm:gap-2 bg-black/70 backdrop-blur-md p-1.5 sm:p-2 rounded-xl border border-blue-500/40 shadow-[0_0_20px_rgba(59,130,246,0.3)]"
         style={{ pointerEvents: 'auto' }}
       >
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setZoomOutTrigger(t => t + 1)}
-          className="h-10 w-10 text-blue-300 hover:text-white hover:bg-blue-600/50 rounded-lg transition-all duration-200 hover:scale-110 hover:shadow-[0_0_10px_rgba(59,130,246,0.5)]"
-          title="Zoom Out"
+          onClick={() => setZoomInTrigger(t => t + 1)}
+          className="h-8 w-8 sm:h-10 sm:w-10 text-blue-300 hover:text-white hover:bg-blue-600/50 rounded-lg transition-all duration-200 hover:scale-110 hover:shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+          title="Zoom In"
         >
-          <ZoomOut className="w-5 h-5" />
+          <ZoomIn className="w-4 h-4 sm:w-5 sm:h-5" />
         </Button>
 
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setFitTrigger(prev => prev + 1)}
-          className="h-10 px-4 gap-2 font-orbitron text-xs text-cyan-300 hover:text-white hover:bg-cyan-600/50 border-x border-blue-500/30 rounded-none transition-all duration-200 hover:scale-105"
+          className="h-8 sm:h-10 px-2 sm:px-4 gap-2 font-orbitron text-xs text-cyan-300 hover:text-white hover:bg-cyan-600/50 border-x border-blue-500/30 rounded-none transition-all duration-200 hover:scale-105"
           title="Fit to View"
         >
-          <Scan className="w-4 h-4" /> FIT VIEW
+          <Scan className="w-4 h-4" /> <span className="hidden sm:inline">FIT VIEW</span>
         </Button>
 
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setZoomInTrigger(t => t + 1)}
-          className="h-10 w-10 text-blue-300 hover:text-white hover:bg-blue-600/50 rounded-lg transition-all duration-200 hover:scale-110 hover:shadow-[0_0_10px_rgba(59,130,246,0.5)]"
-          title="Zoom In"
+          onClick={() => setZoomOutTrigger(t => t + 1)}
+          className="h-8 w-8 sm:h-10 sm:w-10 text-blue-300 hover:text-white hover:bg-blue-600/50 rounded-lg transition-all duration-200 hover:scale-110 hover:shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+          title="Zoom Out"
         >
-          <ZoomIn className="w-5 h-5" />
+          <ZoomOut className="w-4 h-4 sm:w-5 sm:h-5" />
         </Button>
       </div>
 
@@ -902,13 +904,13 @@ export const SpaceMap = () => {
 
       {/* Link Creation Overlay Hint */}
       {linkSource && isCreator && isEditMode && (
-        <div className="absolute top-[calc(106px+6rem)] lg:top-[calc(152px+6rem)] left-1/2 -translate-x-1/2 z-20 bg-blue-600 text-white px-4 py-2 rounded-full font-bold animate-pulse shadow-[0_0_20px_rgba(37,99,235,0.8)] pointer-events-none">
+        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-20 bg-blue-600 text-white px-4 py-2 rounded-full font-bold animate-pulse shadow-[0_0_20px_rgba(37,99,235,0.8)] pointer-events-none">
           Select target node to link
         </div>
       )}
 
       {/* Legend / Navigation Hint */}
-      <div className="absolute bottom-4 left-4 z-[100] text-xs text-slate-400 font-rajdhani pointer-events-none">
+      <div className="absolute bottom-4 left-4 z-40 text-xs text-slate-400 font-rajdhani pointer-events-none">
         <div className="flex flex-col gap-1 mb-2">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#2a75bb]"></span>{' '}
@@ -936,7 +938,7 @@ export const SpaceMap = () => {
 
       {/* Edit / Details Panel */}
       {selectedTopic && (
-        <div className="absolute bottom-8 right-8 z-[100] w-80 animate-in slide-in-from-right-10 fade-in duration-300 pointer-events-auto">
+        <div className="absolute bottom-8 right-8 z-40 w-80 animate-in slide-in-from-right-10 fade-in duration-300 pointer-events-auto">
           <Card className="bg-slate-950/90 backdrop-blur-xl border-blue-500/30 text-white shadow-[0_0_30px_rgba(59,130,246,0.2)]">
             <CardHeader className="pb-2">
               <CardTitle className="text-xl font-orbitron text-blue-300 flex justify-between items-center">
