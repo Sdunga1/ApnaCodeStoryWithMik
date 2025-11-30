@@ -44,10 +44,13 @@ import {
   Scan,
   ZoomIn,
   ZoomOut,
+  ExternalLink,
+  Youtube,
 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import * as THREE from 'three';
 import { useAuth } from '@/contexts/AuthContext';
+import { getRoadmapData, saveRoadmapData, updateRoadmapTopic as updateTopicAPI, deleteRoadmapTopic as deleteTopicAPI } from '@/lib/api';
 
 // Draggable Wrapper for Edit Mode
 const DraggableTopic = ({
@@ -447,23 +450,14 @@ export const SpaceMap = () => {
   const [newNodeShape, setNewNodeShape] = useState<DSAShape>('rect');
   const [newNodeFontSize, setNewNodeFontSize] = useState(0.45);
   const [newNodeTextColor, setNewNodeTextColor] = useState('#ffffff');
+  const [newNodeYoutubeLink, setNewNodeYoutubeLink] = useState('');
+  const [newNodeOptionalLink, setNewNodeOptionalLink] = useState('');
 
   // State for Topics and Edges
-  const [topics, setTopics] = useState<DSATopic[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('dsa-topics');
-      return saved ? JSON.parse(saved) : initialTopics;
-    }
-    return initialTopics;
-  });
-
-  const [edges, setEdges] = useState<DSAEdge[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('dsa-edges');
-      return saved ? JSON.parse(saved) : initialEdges;
-    }
-    return initialEdges;
-  });
+  const [topics, setTopics] = useState<DSATopic[]>(initialTopics);
+  const [edges, setEdges] = useState<DSAEdge[]>(initialEdges);
+  const [isLoadingRoadmap, setIsLoadingRoadmap] = useState(true);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // History Management
   const [history, setHistory] = useState<
@@ -482,13 +476,51 @@ export const SpaceMap = () => {
     setHistoryIndex(newHistory.length - 1);
   };
 
-  // Initialize history
+  // Load roadmap data from API on mount
   useEffect(() => {
-    if (history.length === 0) {
+    const loadRoadmapData = async () => {
+      try {
+        setIsLoadingRoadmap(true);
+        const data = await getRoadmapData();
+        
+        // If database has data, use it; otherwise use initial data
+        if (data.topics.length > 0) {
+          setTopics(data.topics);
+          setEdges(data.edges);
+        } else {
+          // Database is empty, use initial data and save it
+          setTopics(initialTopics);
+          setEdges(initialEdges);
+          // Only save if creator (to initialize database)
+          if (isCreator) {
+            try {
+              await saveRoadmapData(initialTopics, initialEdges);
+            } catch (err) {
+              console.error('Failed to initialize roadmap in database:', err);
+            }
+          }
+        }
+      } catch (error: any) {
+        console.error('Failed to load roadmap data:', error);
+        // Fallback to initial data if API fails
+        setTopics(initialTopics);
+        setEdges(initialEdges);
+        setSaveError('Failed to load roadmap. Using default data.');
+      } finally {
+        setIsLoadingRoadmap(false);
+      }
+    };
+
+    loadRoadmapData();
+  }, []); // Only run on mount
+
+  // Initialize history after data is loaded
+  useEffect(() => {
+    if (!isLoadingRoadmap && history.length === 0) {
       setHistory([{ topics, edges }]);
       setHistoryIndex(0);
     }
-  }, []);
+  }, [isLoadingRoadmap, topics, edges]);
 
   // Disable edit mode for non-creators
   useEffect(() => {
@@ -498,30 +530,57 @@ export const SpaceMap = () => {
     }
   }, [isCreator, isEditMode]);
 
-  const undo = () => {
+  const undo = async () => {
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1;
       const state = history[newIndex];
       setTopics(state.topics);
       setEdges(state.edges);
       setHistoryIndex(newIndex);
+      // Save to API after undo
+      if (isCreator) {
+        try {
+          await saveRoadmapData(state.topics, state.edges);
+        } catch (error: any) {
+          console.error('Failed to save after undo:', error);
+        }
+      }
     }
   };
 
-  const redo = () => {
+  const redo = async () => {
     if (historyIndex < history.length - 1) {
       const newIndex = historyIndex + 1;
       const state = history[newIndex];
       setTopics(state.topics);
       setEdges(state.edges);
       setHistoryIndex(newIndex);
+      // Save to API after redo
+      if (isCreator) {
+        try {
+          await saveRoadmapData(state.topics, state.edges);
+        } catch (error: any) {
+          console.error('Failed to save after redo:', error);
+        }
+      }
     }
   };
 
-  const updateState = (newTopics: DSATopic[], newEdges: DSAEdge[]) => {
+  const updateState = async (newTopics: DSATopic[], newEdges: DSAEdge[], saveToAPI: boolean = true) => {
     setTopics(newTopics);
     setEdges(newEdges);
     addToHistory(newTopics, newEdges);
+    
+    // Save to API if creator and saveToAPI is true
+    if (isCreator && saveToAPI) {
+      try {
+        setSaveError(null);
+        await saveRoadmapData(newTopics, newEdges);
+      } catch (error: any) {
+        console.error('Failed to save roadmap to database:', error);
+        setSaveError(error.message || 'Failed to save changes. Please try again.');
+      }
+    }
   };
 
   // Link creation state
@@ -530,15 +589,26 @@ export const SpaceMap = () => {
   const [zoomInTrigger, setZoomInTrigger] = useState(0);
   const [zoomOutTrigger, setZoomOutTrigger] = useState(0);
 
-  const handleSave = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('dsa-topics', JSON.stringify(topics));
-      localStorage.setItem('dsa-edges', JSON.stringify(edges));
+  const handleSave = async () => {
+    if (!isCreator) return;
+    
+    try {
+      setSaveError(null);
+      await saveRoadmapData(topics, edges);
+      // Show success feedback (you can add a toast here if needed)
+    } catch (error: any) {
+      console.error('Failed to save roadmap:', error);
+      setSaveError(error.message || 'Failed to save roadmap. Please try again.');
     }
-
   };
 
-  const handleCreateNode = () => {
+  const handleCreateNode = async () => {
+    // Validate YouTube Playlist link is provided
+    if (!newNodeYoutubeLink.trim()) {
+      alert('Please provide a YouTube Playlist link');
+      return;
+    }
+
     const newTopic: DSATopic = {
       id: uuidv4(),
       name: newNodeName || 'New Node',
@@ -549,9 +619,11 @@ export const SpaceMap = () => {
       scale: 0.1, // Start at small scale for smooth pop-in animation
       fontSize: newNodeFontSize,
       textColor: newNodeTextColor,
+      youtubePlaylistLink: newNodeYoutubeLink.trim(),
+      optionalLink: newNodeOptionalLink.trim() || undefined,
     };
     const newTopicsList = [...topics, newTopic];
-    updateState(newTopicsList, edges);
+    await updateState(newTopicsList, edges);
     setSelectedTopic(newTopic);
     setIsAddDialogOpen(false);
 
@@ -595,28 +667,62 @@ export const SpaceMap = () => {
     setNewNodeShape('rect');
     setNewNodeFontSize(0.45);
     setNewNodeTextColor('#ffffff');
+    setNewNodeYoutubeLink('');
+    setNewNodeOptionalLink('');
 
   };
 
-  const handleDeleteTopic = () => {
-    if (!selectedTopic) return;
-    const newTopics = topics.filter(t => t.id !== selectedTopic.id);
-    const newEdges = edges.filter(
-      e => e.source !== selectedTopic.id && e.target !== selectedTopic.id
-    );
+  const handleDeleteTopic = async () => {
+    if (!selectedTopic || !isCreator) return;
+    
+    try {
+      setSaveError(null);
+      // Delete from API
+      await deleteTopicAPI(selectedTopic.id);
+      
+      // Update local state
+      const newTopics = topics.filter(t => t.id !== selectedTopic.id);
+      const newEdges = edges.filter(
+        e => e.source !== selectedTopic.id && e.target !== selectedTopic.id
+      );
 
-    updateState(newTopics, newEdges);
-    setSelectedTopic(null);
+      await updateState(newTopics, newEdges);
+      setSelectedTopic(null);
+    } catch (error: any) {
+      console.error('Failed to delete topic:', error);
+      setSaveError(error.message || 'Failed to delete topic. Please try again.');
+    }
   };
 
-  const handleUpdateTopic = (updates: Partial<DSATopic>) => {
-    if (!selectedTopic) return;
-    const updated = { ...selectedTopic, ...updates };
-    const newTopics = topics.map(t =>
-      t.id === selectedTopic.id ? updated : t
-    );
-    setTopics(newTopics);
-    setSelectedTopic(updated);
+  const handleUpdateTopic = async (updates: Partial<DSATopic>) => {
+    if (!selectedTopic || !isCreator) return;
+    
+    try {
+      setSaveError(null);
+      // Update via API
+      const updatedTopic = await updateTopicAPI(selectedTopic.id, updates);
+      
+      // Update local state
+      const updated = { ...selectedTopic, ...updates };
+      const newTopics = topics.map(t =>
+        t.id === selectedTopic.id ? updated : t
+      );
+      setTopics(newTopics);
+      setSelectedTopic(updated);
+      
+      // Save entire roadmap to ensure consistency
+      await saveRoadmapData(newTopics, edges);
+    } catch (error: any) {
+      console.error('Failed to update topic:', error);
+      setSaveError(error.message || 'Failed to update topic. Please try again.');
+      // Still update local state for immediate feedback
+      const updated = { ...selectedTopic, ...updates };
+      const newTopics = topics.map(t =>
+        t.id === selectedTopic.id ? updated : t
+      );
+      setTopics(newTopics);
+      setSelectedTopic(updated);
+    }
   };
 
   // Add history entry for Drag End (Move)
@@ -629,12 +735,21 @@ export const SpaceMap = () => {
     }
   };
 
-  // New wrapper for Drag End to commit history
-  const handleDragEnd = () => {
+  // New wrapper for Drag End to commit history and save
+  const handleDragEnd = async () => {
     addToHistory(topics, edges);
+    // Save position changes to API
+    if (isCreator) {
+      try {
+        await saveRoadmapData(topics, edges);
+      } catch (error: any) {
+        console.error('Failed to save position changes:', error);
+        // Don't show error for every drag, just log it
+      }
+    }
   };
 
-  const handleToggleLink = () => {
+  const handleToggleLink = async () => {
     if (!selectedTopic) return;
     if (linkSource === selectedTopic.id) {
       setLinkSource(null); // Cancel
@@ -667,7 +782,7 @@ export const SpaceMap = () => {
         newEdges = [...edges, { source: linkSource, target: selectedTopic.id }];
       }
 
-      updateState(topics, newEdges);
+      await updateState(topics, newEdges);
       setLinkSource(null);
     }
   };
@@ -718,22 +833,48 @@ export const SpaceMap = () => {
 
   return (
     <div className="w-full h-full relative bg-black overflow-visible">
+      {/* Loading Indicator */}
+      {isLoadingRoadmap && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="text-blue-400 font-orbitron tracking-widest animate-pulse">
+            Loading Roadmap...
+          </div>
+        </div>
+      )}
+
+      {/* Error Message */}
+      {saveError && isCreator && (
+        <div className="absolute top-20 sm:top-16 md:top-12 left-4 z-50 bg-red-600/90 text-white px-4 py-2 rounded-lg text-sm font-rajdhani shadow-[0_0_20px_rgba(239,68,68,0.8)] pointer-events-auto max-w-md">
+          <div className="flex items-center justify-between gap-2">
+            <span>{saveError}</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5 text-white hover:bg-red-700"
+              onClick={() => setSaveError(null)}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* UI Overlay Header */}
-      <div className="absolute top-[calc(106px+1rem)] lg:top-[calc(152px+1rem)] left-4 z-[100] select-none flex flex-col gap-2 pointer-events-none">
+      <div className="absolute top-8 sm:top-6 md:top-4 left-4 z-40 select-none flex flex-col gap-2 pointer-events-none">
         <div>
           <h1
-            className="text-4xl font-bold text-white tracking-wider font-orbitron"
+            className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white tracking-wider font-orbitron"
             style={{ textShadow: '0 0 10px rgba(96, 165, 250, 0.8)' }}
           >
             CodeStorywithMik <span className="text-blue-500">Roadmap</span>
           </h1>
-          <p className="text-blue-200 font-light text-sm mt-1 max-w-md font-rajdhani opacity-80">
+          <p className="text-blue-200 font-light text-xs sm:text-sm mt-1 max-w-md font-rajdhani opacity-80">
             {isCreator && isEditMode ? 'EDIT MODE ENABLED' : 'Welcome to the World of DSA'}
           </p>
         </div>
 
         {isCreator && (
-          <div className="flex gap-2 mt-2" style={{ pointerEvents: 'auto' }}>
+          <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2 max-w-[calc(100%-5rem)]" style={{ pointerEvents: 'auto' }}>
             <Button
               variant={isEditMode ? 'secondary' : 'outline'}
               size="sm"
@@ -744,10 +885,11 @@ export const SpaceMap = () => {
                 }
                 setIsEditMode(!isEditMode);
               }}
-              className="gap-2 font-orbitron tracking-wider border-blue-500/50 text-blue-100 bg-blue-900/20 hover:bg-blue-800/50"
+              className="h-7 sm:h-9 px-2 sm:px-3 gap-1 sm:gap-2 text-xs sm:text-sm font-orbitron tracking-wider border-blue-500/50 text-blue-100 bg-blue-900/20 hover:bg-blue-800/50"
             >
-              <Edit className="w-4 h-4" />{' '}
-              {isEditMode ? 'Done Editing' : 'Edit Cosmos'}
+              <Edit className="w-3 h-3 sm:w-4 sm:h-4" />{' '}
+              <span className="hidden sm:inline">{isEditMode ? 'Done Editing' : 'Edit Cosmos'}</span>
+              <span className="sm:hidden">{isEditMode ? 'Done' : 'Edit'}</span>
             </Button>
 
             {isEditMode && (
@@ -756,17 +898,18 @@ export const SpaceMap = () => {
                   variant="outline"
                   size="sm"
                   onClick={handleSave}
-                  className="gap-2 font-orbitron border-green-500/50 text-green-100 bg-green-900/20 hover:bg-green-800/50"
+                  className="h-7 sm:h-9 px-2 sm:px-3 gap-1 sm:gap-2 text-xs sm:text-sm font-orbitron border-green-500/50 text-green-100 bg-green-900/20 hover:bg-green-800/50"
                 >
-                  <Save className="w-4 h-4" /> Save
+                  <Save className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Save</span>
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setIsAddDialogOpen(true)}
-                  className="gap-2 font-orbitron border-purple-500/50 text-purple-100 bg-purple-900/20 hover:bg-purple-800/50"
+                  className="h-7 sm:h-9 px-2 sm:px-3 gap-1 sm:gap-2 text-xs sm:text-sm font-orbitron border-purple-500/50 text-purple-100 bg-purple-900/20 hover:bg-purple-800/50"
                 >
-                  <Plus className="w-4 h-4" /> Add Node
+                  <Plus className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Add Node</span>
+                  <span className="sm:hidden">Add</span>
                 </Button>
               </>
             )}
@@ -776,37 +919,37 @@ export const SpaceMap = () => {
 
       {/* Top Right Zoom Controls */}
       <div
-        className="absolute top-[calc(106px+1rem)] lg:top-[calc(152px+1rem)] right-4 z-[100] flex items-center gap-2 bg-black/70 backdrop-blur-md p-2 rounded-xl border border-blue-500/40 shadow-[0_0_20px_rgba(59,130,246,0.3)]"
+        className="absolute top-[5.5rem] sm:top-4 right-4 z-40 flex flex-col sm:flex-row items-center gap-1 sm:gap-2 bg-black/70 backdrop-blur-md p-1.5 sm:p-2 rounded-xl border border-blue-500/40 shadow-[0_0_20px_rgba(59,130,246,0.3)]"
         style={{ pointerEvents: 'auto' }}
       >
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setZoomOutTrigger(t => t + 1)}
-          className="h-10 w-10 text-blue-300 hover:text-white hover:bg-blue-600/50 rounded-lg transition-all duration-200 hover:scale-110 hover:shadow-[0_0_10px_rgba(59,130,246,0.5)]"
-          title="Zoom Out"
+          onClick={() => setZoomInTrigger(t => t + 1)}
+          className="h-8 w-8 sm:h-10 sm:w-10 text-blue-300 hover:text-white hover:bg-blue-600/50 rounded-lg transition-all duration-200 hover:scale-110 hover:shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+          title="Zoom In"
         >
-          <ZoomOut className="w-5 h-5" />
+          <ZoomIn className="w-4 h-4 sm:w-5 sm:h-5" />
         </Button>
 
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setFitTrigger(prev => prev + 1)}
-          className="h-10 px-4 gap-2 font-orbitron text-xs text-cyan-300 hover:text-white hover:bg-cyan-600/50 border-x border-blue-500/30 rounded-none transition-all duration-200 hover:scale-105"
+          className="h-8 sm:h-10 px-2 sm:px-4 gap-2 font-orbitron text-xs text-cyan-300 hover:text-white hover:bg-cyan-600/50 border-x border-blue-500/30 rounded-none transition-all duration-200 hover:scale-105"
           title="Fit to View"
         >
-          <Scan className="w-4 h-4" /> FIT VIEW
+          <Scan className="w-4 h-4" /> <span className="hidden sm:inline">FIT VIEW</span>
         </Button>
 
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setZoomInTrigger(t => t + 1)}
-          className="h-10 w-10 text-blue-300 hover:text-white hover:bg-blue-600/50 rounded-lg transition-all duration-200 hover:scale-110 hover:shadow-[0_0_10px_rgba(59,130,246,0.5)]"
-          title="Zoom In"
+          onClick={() => setZoomOutTrigger(t => t + 1)}
+          className="h-8 w-8 sm:h-10 sm:w-10 text-blue-300 hover:text-white hover:bg-blue-600/50 rounded-lg transition-all duration-200 hover:scale-110 hover:shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+          title="Zoom Out"
         >
-          <ZoomIn className="w-5 h-5" />
+          <ZoomOut className="w-4 h-4 sm:w-5 sm:h-5" />
         </Button>
       </div>
 
@@ -879,6 +1022,32 @@ export const SpaceMap = () => {
                 </Select>
               </div>
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="youtube" className="text-xs text-slate-400 font-rajdhani">
+                YouTube Playlist Link <span className="text-red-400">*</span>
+              </Label>
+              <Input
+                id="youtube"
+                type="url"
+                value={newNodeYoutubeLink}
+                onChange={e => setNewNodeYoutubeLink(e.target.value)}
+                className="bg-slate-900/50 border-blue-500/30 text-white placeholder:text-slate-500 focus:border-blue-500"
+                placeholder="https://www.youtube.com/playlist?list=..."
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="optional" className="text-xs text-slate-400 font-rajdhani">
+                Optional Link
+              </Label>
+              <Input
+                id="optional"
+                type="url"
+                value={newNodeOptionalLink}
+                onChange={e => setNewNodeOptionalLink(e.target.value)}
+                className="bg-slate-900/50 border-blue-500/30 text-white placeholder:text-slate-500 focus:border-blue-500"
+                placeholder="https://example.com (optional)"
+              />
+            </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-2 mt-4">
             <Button
@@ -902,13 +1071,13 @@ export const SpaceMap = () => {
 
       {/* Link Creation Overlay Hint */}
       {linkSource && isCreator && isEditMode && (
-        <div className="absolute top-[calc(106px+6rem)] lg:top-[calc(152px+6rem)] left-1/2 -translate-x-1/2 z-20 bg-blue-600 text-white px-4 py-2 rounded-full font-bold animate-pulse shadow-[0_0_20px_rgba(37,99,235,0.8)] pointer-events-none">
+        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-20 bg-blue-600 text-white px-4 py-2 rounded-full font-bold animate-pulse shadow-[0_0_20px_rgba(37,99,235,0.8)] pointer-events-none">
           Select target node to link
         </div>
       )}
 
       {/* Legend / Navigation Hint */}
-      <div className="absolute bottom-4 left-4 z-[100] text-xs text-slate-400 font-rajdhani pointer-events-none">
+      <div className="absolute bottom-4 left-4 z-40 text-xs text-slate-400 font-rajdhani pointer-events-none">
         <div className="flex flex-col gap-1 mb-2">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#2a75bb]"></span>{' '}
@@ -936,7 +1105,7 @@ export const SpaceMap = () => {
 
       {/* Edit / Details Panel */}
       {selectedTopic && (
-        <div className="absolute bottom-8 right-8 z-[100] w-80 animate-in slide-in-from-right-10 fade-in duration-300 pointer-events-auto">
+        <div className="absolute bottom-8 right-8 z-40 w-80 animate-in slide-in-from-right-10 fade-in duration-300 pointer-events-auto">
           <Card className="bg-slate-950/90 backdrop-blur-xl border-blue-500/30 text-white shadow-[0_0_30px_rgba(59,130,246,0.2)]">
             <CardHeader className="pb-2">
               <CardTitle className="text-xl font-orbitron text-blue-300 flex justify-between items-center">
@@ -993,10 +1162,10 @@ export const SpaceMap = () => {
                         <SelectTrigger className="h-8 bg-slate-900/50 border-blue-500/30 text-xs">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="rect">Rectangle</SelectItem>
-                          <SelectItem value="circle">Circle</SelectItem>
-                          <SelectItem value="rhomboid">Rhombus</SelectItem>
+                        <SelectContent className="bg-slate-900 border-blue-500/30 z-[200]">
+                          <SelectItem value="rect" className="text-white focus:bg-blue-600/50">Rectangle</SelectItem>
+                          <SelectItem value="circle" className="text-white focus:bg-blue-600/50">Circle</SelectItem>
+                          <SelectItem value="rhomboid" className="text-white focus:bg-blue-600/50">Rhombus</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1012,14 +1181,14 @@ export const SpaceMap = () => {
                         <SelectTrigger className="h-8 bg-slate-900/50 border-blue-500/30 text-xs">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Foundation">Foundation</SelectItem>
-                          <SelectItem value="Core">Core</SelectItem>
-                          <SelectItem value="Intermediate">
+                        <SelectContent className="bg-slate-900 border-blue-500/30 z-[200]">
+                          <SelectItem value="Foundation" className="text-white focus:bg-blue-600/50">Foundation</SelectItem>
+                          <SelectItem value="Core" className="text-white focus:bg-blue-600/50">Core</SelectItem>
+                          <SelectItem value="Intermediate" className="text-white focus:bg-blue-600/50">
                             Intermediate
                           </SelectItem>
-                          <SelectItem value="Advanced">Advanced</SelectItem>
-                          <SelectItem value="Final">Final</SelectItem>
+                          <SelectItem value="Advanced" className="text-white focus:bg-blue-600/50">Advanced</SelectItem>
+                          <SelectItem value="Final" className="text-white focus:bg-blue-600/50">Final</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1085,6 +1254,38 @@ export const SpaceMap = () => {
                     </div>
                   </div>
 
+                  <div className="space-y-1 pt-1">
+                    <Label htmlFor="youtube-edit" className="text-xs text-slate-400">
+                      YouTube Playlist Link <span className="text-red-400">*</span>
+                    </Label>
+                    <Input
+                      id="youtube-edit"
+                      type="url"
+                      value={selectedTopic.youtubePlaylistLink || ''}
+                      onChange={e =>
+                        handleUpdateTopic({ youtubePlaylistLink: e.target.value })
+                      }
+                      className="bg-slate-900/50 border-blue-500/30 text-white text-xs h-8"
+                      placeholder="https://www.youtube.com/playlist?list=..."
+                    />
+                  </div>
+
+                  <div className="space-y-1 pt-1">
+                    <Label htmlFor="optional-edit" className="text-xs text-slate-400">
+                      Optional Link
+                    </Label>
+                    <Input
+                      id="optional-edit"
+                      type="url"
+                      value={selectedTopic.optionalLink || ''}
+                      onChange={e =>
+                        handleUpdateTopic({ optionalLink: e.target.value })
+                      }
+                      className="bg-slate-900/50 border-blue-500/30 text-white text-xs h-8"
+                      placeholder="https://example.com (optional)"
+                    />
+                  </div>
+
                   <div className="flex gap-2 pt-2">
                     <Button
                       variant="destructive"
@@ -1124,6 +1325,35 @@ export const SpaceMap = () => {
                   <p className="text-slate-300 font-rajdhani text-lg leading-snug">
                     {selectedTopic.description}
                   </p>
+                  
+                  {/* Links for users */}
+                  <div className="mt-4 space-y-2">
+                    {selectedTopic.youtubePlaylistLink && (
+                      <a
+                        href={selectedTopic.youtubePlaylistLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 w-full px-4 py-2 bg-red-600/20 hover:bg-red-600/40 border border-red-500/50 rounded transition-all hover:shadow-[0_0_15px_rgba(239,68,68,0.5)] text-sm font-orbitron uppercase tracking-widest text-white"
+                      >
+                        <Youtube className="w-4 h-4" />
+                        <span>YouTube Playlist</span>
+                        <ExternalLink className="w-3 h-3 ml-auto" />
+                      </a>
+                    )}
+                    {selectedTopic.optionalLink && (
+                      <a
+                        href={selectedTopic.optionalLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 w-full px-4 py-2 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/50 rounded transition-all hover:shadow-[0_0_15px_rgba(37,99,235,0.5)] text-sm font-orbitron uppercase tracking-widest text-white"
+                      >
+                        <LinkIcon className="w-4 h-4" />
+                        <span>Additional Resource</span>
+                        <ExternalLink className="w-3 h-3 ml-auto" />
+                      </a>
+                    )}
+                  </div>
+
                   <Button
                     className="mt-4 w-full bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/50 rounded transition-all hover:shadow-[0_0_15px_rgba(37,99,235,0.5)] text-sm font-orbitron uppercase tracking-widest text-white"
                     onClick={() => setSelectedTopic(null)}
@@ -1143,7 +1373,7 @@ export const SpaceMap = () => {
           <SpaceMapContent
             topics={topics}
             edges={edges}
-            onTopicSelect={t => {
+            onTopicSelect={async (t) => {
               if (linkSource && isCreator && isEditMode && linkSource !== t.id) {
                 // If linking, selecting another node completes the link
                 const exists = edges.some(
@@ -1165,7 +1395,7 @@ export const SpaceMap = () => {
                   newEdges = [...edges, { source: linkSource, target: t.id }];
                 }
 
-                updateState(topics, newEdges);
+                await updateState(topics, newEdges);
                 setLinkSource(null); // Reset link source
               } else {
                 setSelectedTopic(t);
@@ -1174,9 +1404,9 @@ export const SpaceMap = () => {
             selectedTopic={selectedTopic}
             isEditMode={isCreator && isEditMode}
             onTopicMove={handleMoveTopic}
-            onDeleteEdge={index => {
+            onDeleteEdge={async (index) => {
               const newEdges = edges.filter((_, i) => i !== index);
-              updateState(topics, newEdges);
+              await updateState(topics, newEdges);
             }}
             fitTrigger={fitTrigger}
             zoomInTrigger={zoomInTrigger}

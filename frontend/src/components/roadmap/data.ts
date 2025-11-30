@@ -11,6 +11,8 @@ export interface DSATopic {
   scale?: number;
   fontSize?: number;
   textColor?: string;
+  youtubePlaylistLink?: string;
+  optionalLink?: string;
 }
 
 export interface DSAEdge {

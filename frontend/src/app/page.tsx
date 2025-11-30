@@ -619,12 +619,16 @@ export default function Home() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 flex flex-col min-h-0">
         <Header
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           sidebarOpen={sidebarOpen}
         />
-        <div className="pt-[220px] md:pt-[152px]">
+        <div 
+          className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden"
+          style={{ scrollPaddingTop: '106px' }}
+        >
+          <div className="h-[106px] sm:h-[137px] md:h-[152px] flex-shrink-0"></div>
           {activeView === 'home' ? (
             <HomePage onEditPost={handleEditPost} />
           ) : activeView === 'profile' ? (
@@ -632,7 +636,7 @@ export default function Home() {
           ) : activeView === 'create-post' ? (
             <CreatePostPage onPostComplete={handlePostComplete} />
           ) : activeView === 'practice' ? (
-          <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8 pb-8 sm:pb-12 lg:pb-16">
             {/* Header */}
             <div className="mb-8">
               <h1
@@ -877,7 +881,7 @@ export default function Home() {
             )}
           </div>
         ) : (
-          <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8 pb-0">
             <div className="text-center py-16">
               <h2
                 className={`mb-4 ${
