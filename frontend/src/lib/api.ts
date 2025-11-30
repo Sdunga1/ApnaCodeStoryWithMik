@@ -222,3 +222,59 @@ export async function updateProfile(payload: ProfileUpdatePayload): Promise<User
   return data.user;
 }
 
+// Roadmap API functions
+export interface RoadmapData {
+  topics: any[];
+  edges: any[];
+}
+
+export async function getRoadmapData(): Promise<RoadmapData> {
+  const response = await fetch(`${API_URL}/roadmap`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  const data = await handleResponse<{ success: boolean; topics?: any[]; edges?: any[]; error?: string }>(response);
+  if (!data.success) {
+    throw new Error(data.error || 'Failed to fetch roadmap data');
+  }
+  return {
+    topics: data.topics || [],
+    edges: data.edges || [],
+  };
+}
+
+export async function saveRoadmapData(topics: any[], edges: any[]): Promise<void> {
+  const response = await authedFetch('/roadmap', {
+    method: 'POST',
+    body: JSON.stringify({ topics, edges }),
+  });
+  const data = await handleResponse<{ success: boolean; error?: string }>(response);
+  if (!data.success) {
+    throw new Error(data.error || 'Failed to save roadmap data');
+  }
+}
+
+export async function updateRoadmapTopic(topicId: string, updates: any): Promise<any> {
+  const response = await authedFetch(`/roadmap/topics/${topicId}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates),
+  });
+  const data = await handleResponse<{ success: boolean; topic?: any; error?: string }>(response);
+  if (!data.success) {
+    throw new Error(data.error || 'Failed to update roadmap topic');
+  }
+  return data.topic;
+}
+
+export async function deleteRoadmapTopic(topicId: string): Promise<void> {
+  const response = await authedFetch(`/roadmap/topics/${topicId}`, {
+    method: 'DELETE',
+  });
+  const data = await handleResponse<{ success: boolean; error?: string }>(response);
+  if (!data.success) {
+    throw new Error(data.error || 'Failed to delete roadmap topic');
+  }
+}
+
